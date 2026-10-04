@@ -27,19 +27,14 @@ export default function NewProposalPage() {
 
   useEffect(() => {
     async function loadProducts() {
-      const supabase = createClient()
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('client_id')
-        .single()
-      if (!profile?.client_id) return
-
-      const { data } = await supabase
-        .from('products')
-        .select('id, name')
-        .eq('client_id', profile.client_id)
-        .eq('is_active', true)
-      setProducts(data ?? [])
+      try {
+        const res = await fetch('/api/products')
+        if (!res.ok) throw new Error(String(res.status))
+        const json = await res.json()
+        setProducts(json.products ?? [])
+      } catch {
+        setError('No se pudieron cargar los servicios. Recarga la página.')
+      }
     }
     loadProducts()
   }, [])
