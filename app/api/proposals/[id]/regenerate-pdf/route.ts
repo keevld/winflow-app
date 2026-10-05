@@ -127,7 +127,11 @@ export async function POST(
         .eq('id', id).eq('client_id', profile.client_id)
       return NextResponse.json({ error: 'N8N rejected regeneration' }, { status: 502 })
     }
-  } catch {
+  } catch (err) {
+    // Misma lógica: si solo venció la espera, n8n sigue regenerando el PDF.
+    if (err instanceof Error && (err.name === 'TimeoutError' || err.name === 'AbortError')) {
+      return NextResponse.json({ ok: true, pending: true }, { status: 202 })
+    }
     await service.from('proposals')
       .update({ status: 'ready', pdf_url: previousPdfUrl, failure_reason: 'Could not reach N8N' })
       .eq('id', id).eq('client_id', profile.client_id)

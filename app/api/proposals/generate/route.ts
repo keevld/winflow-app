@@ -113,7 +113,12 @@ export async function POST(req: NextRequest) {
         .eq('id', proposal_id).eq('client_id', profile.client_id)
       return NextResponse.json({ error: 'N8N rejected generation' }, { status: 502 })
     }
-  } catch {
+  } catch (err) {
+    // n8n responde al terminar (~40 s). Si solo venció nuestra espera, la generación sigue
+    // en marcha y n8n actualizará la propuesta: no es un fallo.
+    if (err instanceof Error && (err.name === 'TimeoutError' || err.name === 'AbortError')) {
+      return NextResponse.json({ ok: true, pending: true }, { status: 202 })
+    }
     await service.from('proposals')
       .update({ status: 'failed', failure_reason: 'Could not reach N8N' })
       .eq('id', proposal_id).eq('client_id', profile.client_id)
