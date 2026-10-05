@@ -109,7 +109,7 @@ export async function POST(req: NextRequest) {
     })
     if (!n8nRes.ok) {
       await service.from('proposals')
-        .update({ status: 'failed', failure_reason: 'N8N rejected generation' })
+        .update({ status: 'failed', failure_reason: `N8N rejected generation (HTTP ${n8nRes.status})` })
         .eq('id', proposal_id).eq('client_id', profile.client_id)
       return NextResponse.json({ error: 'N8N rejected generation' }, { status: 502 })
     }
