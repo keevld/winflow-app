@@ -32,3 +32,17 @@ export function titleCase(s: string): string {
     })
     .join(' ')
 }
+
+// Inserta un botón "Ver propuesta en línea" (enlace con seguimiento) en el correo.
+// Busca el párrafo de cierre del correo de Winflow; si el usuario lo editó, lo pone antes de </body>.
+export function injectViewLink(html: string, url: string, color: string): string {
+  const safeUrl = url.replace(/"/g, '%22')
+  const safeColor = /^#[0-9a-fA-F]{6}$/.test(color) ? color : '#111827'
+  const block =
+    `<p style="margin:16px 0 0"><a href="${safeUrl}" target="_blank" style="display:inline-block;font-size:14px;font-weight:600;color:${safeColor};text-decoration:underline">Ver la propuesta en línea</a></p>`
+  const marker = html.lastIndexOf('<p style="margin:20px 0 0')
+  if (marker !== -1) return html.slice(0, marker) + block + html.slice(marker)
+  const body = html.lastIndexOf('</body>')
+  if (body !== -1) return html.slice(0, body) + block + html.slice(body)
+  return html + block
+}
