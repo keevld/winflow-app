@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { capitalizeFirst } from '@/lib/text'
 import { requireAdminContext, isAdminContext } from '@/lib/api-auth'
 
 export async function GET() {
@@ -39,8 +40,8 @@ export async function POST(req: NextRequest) {
     .from('objections')
     .insert({
       client_id: clientId,
-      objection: body.objection,
-      response: body.response,
+      objection: capitalizeFirst(body.objection),
+      response: capitalizeFirst(body.response),
     })
     .select()
     .single()

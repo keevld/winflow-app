@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAdminContext, isAdminContext } from '@/lib/api-auth'
+import { capitalizeFirst } from '@/lib/text'
 
 const FIELDS = ['name', 'description', 'category', 'is_active'] as const
 
@@ -21,7 +22,13 @@ export async function PATCH(
 
   const update: Record<string, unknown> = {}
   for (const f of FIELDS) {
-    if (f in body) update[f] = body[f]
+    if (!(f in body)) continue
+    const v = body[f]
+    if (f === 'is_active') update[f] = v === true
+    else if (typeof v === 'string') update[f] = v.trim() ? capitalizeFirst(v) : (f === 'name' ? undefined : null)
+  }
+  if ('name' in update && update.name === undefined) {
+    return NextResponse.json({ error: 'El nombre del producto es obligatorio' }, { status: 400 })
   }
 
   const { error } = await service.from('products').update(update).eq('id', id).eq('client_id', clientId)

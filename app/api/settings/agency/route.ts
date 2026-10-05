@@ -10,8 +10,29 @@ const BRAND_FIELDS = [
   'tone', 'language_style', 'avoid_words', 'example_phrase',
   'primary_color', 'secondary_color', 'accent_color',
   'competitive_differentiators', 'price_context',
-  'proposal_style_notes', 'proposal_example_url',
+  'proposal_style_notes', 'proposal_example_url', 'logo_base64',
 ] as const
+
+const HEX = /^#[0-9a-fA-F]{6}$/
+const LOGO = /^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/
+const MAX_LOGO_CHARS = 450_000 // ~330 KB de imagen
+
+// Valida los campos de marca que se pintan en el PDF y la página pública.
+function validateBrand(b: Record<string, unknown>): string | null {
+  for (const k of ['primary_color', 'secondary_color', 'accent_color']) {
+    const v = b[k]
+    if (v === undefined || v === null || v === '') { if (k in b) b[k] = null; continue }
+    if (typeof v !== 'string' || !HEX.test(v)) return 'Los colores deben tener formato #RRGGBB'
+  }
+  if ('logo_base64' in b) {
+    const v = b.logo_base64
+    if (v === '' || v === null) b.logo_base64 = null
+    else if (typeof v !== 'string' || v.length > MAX_LOGO_CHARS || !LOGO.test(v)) {
+      return 'El logo debe ser PNG, JPG o WebP de máximo 300 KB'
+    }
+  }
+  return null
+}
 
 function pick(body: Record<string, unknown>, fields: readonly string[]) {
   const out: Record<string, unknown> = {}
@@ -35,6 +56,9 @@ export async function PATCH(req: NextRequest) {
 
   const clientUpdate = pick(body, CLIENT_FIELDS)
   const brandUpdate = pick(body, BRAND_FIELDS)
+
+  const brandError = validateBrand(brandUpdate)
+  if (brandError) return NextResponse.json({ error: brandError }, { status: 400 })
 
   if (Object.keys(clientUpdate).length > 0) {
     const { error } = await service.from('clients').update(clientUpdate).eq('id', clientId)

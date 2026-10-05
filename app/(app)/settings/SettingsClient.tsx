@@ -118,6 +118,7 @@ function AgencySection({ initialClient, initialBrand }: { initialClient: Client 
     language_style: initialBrand?.language_style ?? '',
     avoid_words: initialBrand?.avoid_words ?? '',
     example_phrase: initialBrand?.example_phrase ?? '',
+    logo_base64: initialBrand?.logo_base64 ?? '',
     primary_color: initialBrand?.primary_color ?? '#1E3A5F',
     secondary_color: initialBrand?.secondary_color ?? '#2563EB',
     accent_color: initialBrand?.accent_color ?? '',
@@ -130,6 +131,24 @@ function AgencySection({ initialClient, initialBrand }: { initialClient: Client 
 
   function set<K extends keyof typeof form>(key: K, value: typeof form[K]) {
     setForm(f => ({ ...f, [key]: value }))
+  }
+
+  function handleLogoFile(file: File | undefined) {
+    if (!file) return
+    if (!['image/png', 'image/jpeg', 'image/webp'].includes(file.type)) {
+      setMsg('El logo debe ser PNG, JPG o WebP')
+      return
+    }
+    if (file.size > 300 * 1024) {
+      setMsg('El logo pesa más de 300 KB. Comprímelo e inténtalo de nuevo.')
+      return
+    }
+    const reader = new FileReader()
+    reader.onload = () => {
+      set('logo_base64', String(reader.result))
+      setMsg('Logo cargado. Pulsa Guardar para aplicarlo.')
+    }
+    reader.readAsDataURL(file)
   }
 
   async function handleSave() {
@@ -171,6 +190,22 @@ function AgencySection({ initialClient, initialBrand }: { initialClient: Client 
 
       <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
         <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide">Marca y voz</h2>
+        <Field label="Logo (PNG, JPG o WebP, máx. 300 KB)">
+          <div className="flex items-center gap-4">
+            <div className="w-32 h-16 rounded-lg border border-gray-200 bg-gray-50 flex items-center justify-center overflow-hidden">
+              {form.logo_base64
+                // eslint-disable-next-line @next/next/no-img-element
+                ? <img src={form.logo_base64} alt="Logo de la agencia" className="max-w-full max-h-full object-contain" />
+                : <span className="text-xs text-gray-400">Sin logo</span>}
+            </div>
+            <input type="file" accept="image/png,image/jpeg,image/webp" className="text-xs"
+              onChange={e => handleLogoFile(e.target.files?.[0])} />
+            {form.logo_base64 && (
+              <button type="button" className="text-xs text-red-600 hover:underline"
+                onClick={() => set('logo_base64', '')}>Quitar</button>
+            )}
+          </div>
+        </Field>
         <div className="grid grid-cols-2 gap-4">
           <Field label="Color primario">
             <div className="flex items-center gap-2">
@@ -184,8 +219,8 @@ function AgencySection({ initialClient, initialBrand }: { initialClient: Client 
               <input className={inputCls} value={form.secondary_color} onChange={e => set('secondary_color', e.target.value)} />
             </div>
           </Field>
-          <Field label="Tono"><input className={inputCls} placeholder="ej. cercano, directo, experto" value={form.tone} onChange={e => set('tone', e.target.value)} /></Field>
-          <Field label="Estilo de lenguaje"><input className={inputCls} placeholder="ej. informal, técnico" value={form.language_style} onChange={e => set('language_style', e.target.value)} /></Field>
+          <Field label="Tono"><input className={inputCls} placeholder="Ej. cercano, directo, experto" value={form.tone} onChange={e => set('tone', e.target.value)} /></Field>
+          <Field label="Estilo de lenguaje"><input className={inputCls} placeholder="Ej. informal, técnico" value={form.language_style} onChange={e => set('language_style', e.target.value)} /></Field>
         </div>
         <Field label="Palabras a evitar"><input className={inputCls} value={form.avoid_words} onChange={e => set('avoid_words', e.target.value)} /></Field>
         <Field label="Frase de ejemplo (cómo suena tu marca)"><textarea rows={2} className={textareaCls} value={form.example_phrase} onChange={e => set('example_phrase', e.target.value)} /></Field>
@@ -257,7 +292,7 @@ function SalesProcessSection({ initial }: { initial: SalesProcess | null }) {
             <input type="number" className={inputCls} value={form.avg_cycle_days} onChange={e => set('avg_cycle_days', e.target.value)} />
           </Field>
           <Field label="Quién decide">
-            <input className={inputCls} placeholder="ej. dueño, gerente de marketing" value={form.decision_makers} onChange={e => set('decision_makers', e.target.value)} />
+            <input className={inputCls} placeholder="Ej. dueño, gerente de marketing" value={form.decision_makers} onChange={e => set('decision_makers', e.target.value)} />
           </Field>
         </div>
         <Field label="Pasos típicos del proceso"><textarea rows={3} className={textareaCls} value={form.typical_steps} onChange={e => set('typical_steps', e.target.value)} /></Field>
@@ -524,7 +559,7 @@ function PainPointsCard({ initial }: { initial: PainPoint[] }) {
         ))}
       </div>
       <div className="border-t border-gray-100 pt-4 space-y-3">
-        <textarea rows={2} className={textareaCls} placeholder="ej. Pierden tiempo armando propuestas a mano" value={form.pain} onChange={e => setForm(f => ({ ...f, pain: e.target.value }))} />
+        <textarea rows={2} className={textareaCls} placeholder="Ej. Pierden tiempo armando propuestas a mano" value={form.pain} onChange={e => setForm(f => ({ ...f, pain: e.target.value }))} />
         <input className={inputCls} placeholder="Impacto en el negocio (opcional)" value={form.impact} onChange={e => setForm(f => ({ ...f, impact: e.target.value }))} />
         <div className="flex items-center gap-3">
           <button onClick={handleAdd} disabled={adding} className="text-sm px-4 py-2 rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-50">
@@ -651,7 +686,7 @@ function ObjectionsCard({ initial }: { initial: Objection[] }) {
         ))}
       </div>
       <div className="border-t border-gray-100 pt-4 space-y-3">
-        <input className={inputCls} placeholder="ej. 'Ya usamos plantillas'" value={form.objection} onChange={e => setForm(f => ({ ...f, objection: e.target.value }))} />
+        <input className={inputCls} placeholder="Ej. 'Ya usamos plantillas'" value={form.objection} onChange={e => setForm(f => ({ ...f, objection: e.target.value }))} />
         <textarea rows={2} className={textareaCls} placeholder="Tu respuesta a esa objeción" value={form.response} onChange={e => setForm(f => ({ ...f, response: e.target.value }))} />
         <div className="flex items-center gap-3">
           <button onClick={handleAdd} disabled={adding} className="text-sm px-4 py-2 rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-50">

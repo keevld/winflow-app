@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { sanitizeEmailHtml } from '@/lib/text'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 
 export async function POST(
@@ -63,7 +64,7 @@ export async function POST(
   let email_html: string | undefined
   try {
     const body = await req.json()
-    if (typeof body.email_html === 'string') email_html = body.email_html
+    if (typeof body.email_html === 'string') email_html = sanitizeEmailHtml(body.email_html)
   } catch {}
 
   const service = await createServiceClient()

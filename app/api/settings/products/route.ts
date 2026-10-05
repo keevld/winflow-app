@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAdminContext, isAdminContext } from '@/lib/api-auth'
+import { capitalizeFirst } from '@/lib/text'
 
 export async function GET() {
   const ctx = await requireAdminContext()
@@ -36,9 +37,9 @@ export async function POST(req: NextRequest) {
     .from('products')
     .insert({
       client_id: clientId,
-      name: body.name,
-      description: typeof body.description === 'string' ? body.description : null,
-      category: typeof body.category === 'string' ? body.category : null,
+      name: capitalizeFirst(body.name),
+      description: typeof body.description === 'string' && body.description.trim() ? capitalizeFirst(body.description) : null,
+      category: typeof body.category === 'string' && body.category.trim() ? capitalizeFirst(body.category) : null,
       is_active: body.is_active !== false,
     })
     .select()

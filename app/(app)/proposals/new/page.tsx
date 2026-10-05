@@ -1,15 +1,20 @@
 'use client'
+import { capitalizeFirst, titleCase } from '@/lib/text'
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { nanoid } from 'nanoid'
 
+const OTHER = '__other__'
 const SIZES = ['1–10 personas', '11–50 personas', '51–200 personas', '201–500 personas', '500+ personas']
 
 export default function NewProposalPage() {
   const router = useRouter()
   const [products, setProducts] = useState<{ id: string; name: string }[]>([])
+  const [isAdmin, setIsAdmin] = useState(false)
+  const [customService, setCustomService] = useState('')
+  const [saveService, setSaveService] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
@@ -32,6 +37,7 @@ export default function NewProposalPage() {
         if (!res.ok) throw new Error(String(res.status))
         const json = await res.json()
         setProducts(json.products ?? [])
+        setIsAdmin(json.is_admin === true)
       } catch {
         setError('No se pudieron cargar los servicios. Recarga la página.')
       }
@@ -47,6 +53,14 @@ export default function NewProposalPage() {
     e.preventDefault()
     setLoading(true)
     setError('')
+
+    const isOther = form.product === OTHER
+    const productName = isOther ? capitalizeFirst(customService) : form.product
+    if (!productName) {
+      setError('Escribe el servicio a proponer.')
+      setLoading(false)
+      return
+    }
 
     try {
       const supabase = createClient()
@@ -71,6 +85,11 @@ export default function NewProposalPage() {
           public_slug: slug,
           status: 'draft',
           ...form,
+          product: productName,
+          prospect_name: titleCase(form.prospect_name),
+          prospect_title: capitalizeFirst(form.prospect_title),
+          prospect_company: capitalizeFirst(form.prospect_company),
+          prospect_industry: capitalizeFirst(form.prospect_industry),
         })
         .select('id')
         .single()
@@ -79,8 +98,17 @@ export default function NewProposalPage() {
       await fetch('/api/proposals/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ proposal_id: proposal.id, client_id: profile.client_id, ...form }),
+        body: JSON.stringify({ proposal_id: proposal.id, client_id: profile.client_id, ...form, product: productName }),
       })
+
+      if (isOther && saveService && isAdmin) {
+        // Best effort: guarda el servicio en el catálogo para la próxima vez.
+        await fetch('/api/settings/products', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: productName }),
+        }).catch(() => {})
+      }
 
       router.push(`/proposals/${proposal.id}`)
     } catch (err: unknown) {
@@ -157,7 +185,24 @@ export default function NewProposalPage() {
               onChange={e => set('product', e.target.value)}>
               <option value="">— Selecciona —</option>
               {products.map(p => <option key={p.id} value={p.name}>{p.name}</option>)}
+              <option value={OTHER}>Otro servicio…</option>
             </select>
+            {form.product === OTHER && (
+              <div className="mt-3 space-y-2">
+                <input required autoFocus className={inputClass} value={customService}
+                  onChange={e => setCustomService(e.target.value)}
+                  placeholder="Ej. Diseño de identidad de marca" />
+                <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                  Este servicio no está en tu catálogo, así que la propuesta no incluirá precios ni casos de éxito específicos. Para mejores resultados, cárgalo en Ajustes → Productos.
+                </p>
+                {isAdmin && (
+                  <label className="flex items-center gap-2 text-xs text-gray-600">
+                    <input type="checkbox" checked={saveService} onChange={e => setSaveService(e.target.checked)} />
+                    Guardar como servicio en mi catálogo
+                  </label>
+                )}
+              </div>
+            )}
           </div>
 
           <div>

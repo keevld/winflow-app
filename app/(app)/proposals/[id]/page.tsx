@@ -22,6 +22,10 @@ export default function ProposalPage() {
   const [textSaveMsg, setTextSaveMsg] = useState('')
   const [regenerating, setRegenerating] = useState(false)
   const [regenerateError, setRegenerateError] = useState('')
+  const [outcomeSaving, setOutcomeSaving] = useState(false)
+  const [outcomeError, setOutcomeError] = useState('')
+  const [lostReason, setLostReason] = useState('')
+  const [askingLost, setAskingLost] = useState(false)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const refreshPdfUrl = useCallback(async () => {
@@ -205,6 +209,32 @@ export default function ProposalPage() {
     }
   }
 
+  async function setOutcome(outcome: 'won' | 'lost' | null, reason?: string) {
+    setOutcomeSaving(true)
+    setOutcomeError('')
+    try {
+      const res = await fetch(`/api/proposals/${id}/outcome`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ outcome, reason }),
+      })
+      const json = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(json.error ?? 'No se pudo guardar')
+      setProposal(p => p ? {
+        ...p,
+        outcome,
+        outcome_at: outcome ? new Date().toISOString() : null,
+        outcome_reason: json.outcome_reason ?? null,
+      } : p)
+      setAskingLost(false)
+      setLostReason('')
+    } catch (err: unknown) {
+      setOutcomeError(err instanceof Error ? err.message : 'Error desconocido')
+    } finally {
+      setOutcomeSaving(false)
+    }
+  }
+
   if (!proposal) {
     return <div className="text-sm text-gray-400 py-20 text-center">Cargando...</div>
   }
@@ -241,6 +271,42 @@ export default function ProposalPage() {
           )
         })()}
       </div>
+
+      {/* Resultado de la venta */}
+      {isSent && (
+        <div className="bg-white rounded-xl border border-gray-200 p-5 space-y-3">
+          <h2 className="text-sm font-semibold text-gray-700">¿Cómo salió esta venta?</h2>
+          {proposal.outcome ? (
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-sm text-gray-700">
+                {proposal.outcome === 'won' ? 'Marcada como ganada' : 'Marcada como perdida'}
+                {proposal.outcome === 'lost' && proposal.outcome_reason ? ` — ${proposal.outcome_reason}` : ''}
+              </p>
+              <button disabled={outcomeSaving} onClick={() => setOutcome(null)}
+                className="text-xs text-gray-500 hover:underline disabled:opacity-50">Deshacer</button>
+            </div>
+          ) : askingLost ? (
+            <div className="space-y-2">
+              <input value={lostReason} onChange={e => setLostReason(e.target.value)} maxLength={500}
+                placeholder="Motivo (opcional): precio, eligieron a otra agencia, sin presupuesto…"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900" />
+              <div className="flex gap-2">
+                <button disabled={outcomeSaving} onClick={() => setOutcome('lost', lostReason)}
+                  className="text-sm px-4 py-2 rounded-lg bg-gray-900 text-white hover:bg-gray-800 disabled:opacity-50">Confirmar perdida</button>
+                <button onClick={() => setAskingLost(false)} className="text-sm px-3 py-2 text-gray-500 hover:underline">Cancelar</button>
+              </div>
+            </div>
+          ) : (
+            <div className="flex gap-2">
+              <button disabled={outcomeSaving} onClick={() => setOutcome('won')}
+                className="text-sm px-4 py-2 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50">Ganada</button>
+              <button disabled={outcomeSaving} onClick={() => setAskingLost(true)}
+                className="text-sm px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-50">Perdida</button>
+            </div>
+          )}
+          {outcomeError && <p className="text-xs text-red-600">{outcomeError}</p>}
+        </div>
+      )}
 
       {/* Generating state */}
       {isGenerating && (
@@ -319,9 +385,11 @@ export default function ProposalPage() {
               )}
             </div>
             {isSent ? (
-              <div
-                className="text-sm text-gray-700 border border-gray-100 rounded-lg p-4 bg-gray-50"
-                dangerouslySetInnerHTML={{ __html: emailHtml }}
+              <iframe
+                title="Correo enviado"
+                sandbox=""
+                srcDoc={emailHtml}
+                className="w-full h-96 border border-gray-100 rounded-lg bg-white"
               />
             ) : (
               <textarea

@@ -31,6 +31,9 @@ export interface Proposal {
   view_count: number
   last_viewed_at: string | null
   sent_at: string | null
+  outcome: 'won' | 'lost' | null
+  outcome_at: string | null
+  outcome_reason: string | null
   created_at: string
   updated_at: string
 }

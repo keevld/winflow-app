@@ -70,6 +70,12 @@ export default async function DashboardPage() {
                       </span>
                     )
                   })()}
+                  {p.outcome === 'won' && (
+                    <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-emerald-600 text-white">Ganada</span>
+                  )}
+                  {p.outcome === 'lost' && (
+                    <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-gray-700 text-white">Perdida</span>
+                  )}
                   <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${s.color}`}>
                     {s.label}
                   </span>

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { capitalizeFirst } from '@/lib/text'
 import { requireAdminContext, isAdminContext } from '@/lib/api-auth'
 
 export async function GET() {
@@ -36,11 +37,11 @@ export async function POST(req: NextRequest) {
     .from('success_stories')
     .insert({
       client_id: clientId,
-      company_example: typeof body.company_example === 'string' ? body.company_example : null,
-      problem: typeof body.problem === 'string' ? body.problem : null,
-      solution: typeof body.solution === 'string' ? body.solution : null,
-      result: body.result,
-      relevant_for_industry: typeof body.relevant_for_industry === 'string' ? body.relevant_for_industry : null,
+      company_example: typeof body.company_example === 'string' && body.company_example.trim() ? capitalizeFirst(body.company_example) : null,
+      problem: typeof body.problem === 'string' && body.problem.trim() ? capitalizeFirst(body.problem) : null,
+      solution: typeof body.solution === 'string' && body.solution.trim() ? capitalizeFirst(body.solution) : null,
+      result: capitalizeFirst(body.result),
+      relevant_for_industry: typeof body.relevant_for_industry === 'string' && body.relevant_for_industry.trim() ? capitalizeFirst(body.relevant_for_industry) : null,
     })
     .select()
     .single()

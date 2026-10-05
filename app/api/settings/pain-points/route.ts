@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { capitalizeFirst } from '@/lib/text'
 import { requireAdminContext, isAdminContext } from '@/lib/api-auth'
 
 export async function GET() {
@@ -36,8 +37,8 @@ export async function POST(req: NextRequest) {
     .from('pain_points')
     .insert({
       client_id: clientId,
-      pain: body.pain,
-      impact: typeof body.impact === 'string' ? body.impact : null,
+      pain: capitalizeFirst(body.pain),
+      impact: typeof body.impact === 'string' && body.impact.trim() ? capitalizeFirst(body.impact) : null,
     })
     .select()
     .single()
