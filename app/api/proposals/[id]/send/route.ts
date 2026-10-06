@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { sanitizeEmailHtml, injectViewLink } from '@/lib/text'
+import { sanitizeContent } from '@/lib/commercial'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 
 export async function POST(
@@ -104,7 +105,7 @@ export async function POST(
 
   const { data: full } = await service
     .from('proposals')
-    .select('prospect_email, prospect_company, email_html, email_subject, pdf_url, public_slug')
+    .select('prospect_name, prospect_email, prospect_company, email_html, email_subject, pdf_url, public_slug, proposal_type, commercial, valid_until')
     .eq('id', id)
     .eq('client_id', profile.client_id)
     .single()
@@ -120,21 +121,58 @@ export async function POST(
     service.from('brand_voice').select('primary_color').eq('client_id', profile.client_id).maybeSingle(),
   ])
 
-  let pdfUrl: string | null = null
-  if (full.pdf_url) {
-    const { data: signed } = await service.storage.from('proposals').createSignedUrl(full.pdf_url, 60 * 15)
-    pdfUrl = signed?.signedUrl ?? null
-  }
-
-  if (!pdfUrl) {
-    await revertToReady()
-    return NextResponse.json({ error: 'La propuesta no tiene PDF generado' }, { status: 400 })
-  }
-
+  const isCommercial = full.proposal_type === 'commercial'
+  const esc = (t: string) => t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+  const color = /^#[0-9a-fA-F]{6}$/.test(brand?.primary_color ?? '') ? (brand!.primary_color as string) : '#111827'
   const viewUrl = full.public_slug ? `${new URL(req.url).origin}/p/${full.public_slug}` : null
-  const html = viewUrl
-    ? injectViewLink(full.email_html ?? '', viewUrl, brand?.primary_color ?? '')
-    : (full.email_html ?? '')
+
+  let pdfUrl: string | null = null
+  let html: string
+  let subject: string
+
+  if (isCommercial) {
+    if (!viewUrl) {
+      await revertToReady()
+      return NextResponse.json({ error: 'La propuesta no tiene enlace público' }, { status: 400 })
+    }
+    const { data: priced } = await service
+      .from('proposal_price_items')
+      .select('unit_price')
+      .eq('proposal_id', id)
+      .eq('client_id', profile.client_id)
+    if (!priced?.length || priced.some(i => i.unit_price === null)) {
+      await revertToReady()
+      return NextResponse.json({ error: 'Hay conceptos sin precio. Complétalos antes de enviar.' }, { status: 400 })
+    }
+    const content = sanitizeContent(full.commercial)
+    const agencyName = agency?.company_name ?? ''
+    const hello = full.prospect_name ? `Hola ${esc(full.prospect_name)},` : 'Hola,'
+    const validity = full.valid_until
+      ? `<p style="margin:16px 0 0;font-size:13px;color:#6b7280">Esta propuesta está vigente hasta el ${new Date(`${full.valid_until}T12:00:00`).toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' })}.</p>`
+      : ''
+    html = `<div style="font-family:Arial,Helvetica,sans-serif;max-width:560px;margin:0 auto;color:#111827;line-height:1.55">
+<p>${hello}</p>
+<p>Gracias por la conversación. Te comparto la propuesta con alcance, inversión y siguientes pasos${content.title ? `: <strong>${esc(content.title)}</strong>` : ''}.</p>
+<p style="margin:24px 0"><a href="${esc(viewUrl)}" style="background:${color};color:#ffffff;text-decoration:none;padding:12px 22px;border-radius:8px;font-weight:bold;display:inline-block">Ver y aceptar la propuesta</a></p>
+<p style="font-size:13px;color:#6b7280">Desde ahí también puedes descargarla en PDF. Si tienes dudas, responde a este correo.</p>
+${validity}
+<p style="margin:20px 0 0">${esc(agencyName)}</p>
+</div>`
+    subject = `Propuesta comercial para ${full.prospect_company ?? 'tu empresa'}`
+  } else {
+    if (full.pdf_url) {
+      const { data: signed } = await service.storage.from('proposals').createSignedUrl(full.pdf_url, 60 * 15)
+      pdfUrl = signed?.signedUrl ?? null
+    }
+    if (!pdfUrl) {
+      await revertToReady()
+      return NextResponse.json({ error: 'La propuesta no tiene PDF generado' }, { status: 400 })
+    }
+    html = viewUrl
+      ? injectViewLink(full.email_html ?? '', viewUrl, brand?.primary_color ?? '')
+      : (full.email_html ?? '')
+    subject = full.email_subject || `Propuesta para ${full.prospect_company ?? 'tu empresa'}`
+  }
 
   const n8nRes = await fetch(webhookUrl, {
     method: 'POST',
@@ -145,12 +183,11 @@ export async function POST(
     body: JSON.stringify({
       proposal_id: id,
       to,
-      subject: full.email_subject || `Propuesta para ${full.prospect_company ?? 'tu empresa'}`,
+      subject,
       html,
       from_name: agency?.company_name ?? '',
       reply_to: user.email ?? '',
-      pdf_url: pdfUrl,
-      pdf_filename: 'Propuesta.pdf',
+      ...(pdfUrl ? { pdf_url: pdfUrl, pdf_filename: 'Propuesta.pdf' } : {}),
     }),
   })
 

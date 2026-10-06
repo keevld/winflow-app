@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
+import { getPlatformAdmin } from '@/lib/platform-admin'
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient()
@@ -14,6 +15,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     .eq('id', user.id)
     .single()
 
+  const isPlatformAdmin = !!(await getPlatformAdmin())
+
   return (
     <div className="min-h-screen bg-gray-50">
       <nav className="bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-between">
@@ -22,6 +25,11 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           <Link href="/dashboard" className="text-sm text-gray-600 hover:text-gray-900">
             Propuestas
           </Link>
+          {isPlatformAdmin && (
+            <Link href="/admin" className="text-sm text-gray-600 hover:text-gray-900">
+              Panel Winflow
+            </Link>
+          )}
           {profile?.role === 'admin' && (
             <Link href="/settings" className="text-sm text-gray-600 hover:text-gray-900">
               Perfil de agencia

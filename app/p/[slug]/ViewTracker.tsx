@@ -5,11 +5,12 @@ import { useEffect, useRef } from 'react'
 // Fires a 'view' beacon on mount and a 'time_spent' beacon when the
 // prospect leaves the page or backgrounds the tab. Fire-and-forget:
 // tracking failures must never affect what the prospect sees.
-export default function ViewTracker({ slug }: { slug: string }) {
+export default function ViewTracker({ slug, disabled = false }: { slug: string; disabled?: boolean }) {
   const startRef = useRef<number>(Date.now())
   const sentRef = useRef(false)
 
   useEffect(() => {
+    if (disabled) return
     const trackUrl = `/api/public/proposals/${slug}/track`
 
     fetch(trackUrl, {
@@ -44,7 +45,7 @@ export default function ViewTracker({ slug }: { slug: string }) {
       document.removeEventListener('visibilitychange', onVisibilityChange)
       window.removeEventListener('pagehide', sendTimeSpent)
     }
-  }, [slug])
+  }, [slug, disabled])
 
   return null
 }

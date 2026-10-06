@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState, useRef, useCallback } from 'react'
+import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import type { Proposal } from '@/lib/types'
@@ -48,6 +49,10 @@ export default function ProposalPage() {
         .eq('id', id)
         .single()
 
+      if (data && data.proposal_type === 'commercial') {
+        router.replace(`/proposals/${id}/commercial`)
+        return
+      }
       if (data) {
         setProposal(data)
         setEmailHtml(data.email_html ?? '')
@@ -271,6 +276,21 @@ export default function ProposalPage() {
           )
         })()}
       </div>
+
+      {isSent && (
+        <div className="bg-white rounded-xl border border-gray-200 p-5 flex items-center justify-between gap-4">
+          <div>
+            <h2 className="text-sm font-semibold text-gray-700">¿Ya tuvieron la llamada?</h2>
+            <p className="text-xs text-gray-500 mt-0.5">Crea la propuesta comercial con alcance, precios y botón de aceptación.</p>
+          </div>
+          <Link
+            href={`/proposals/commercial/new?from=${proposal.id}`}
+            className="shrink-0 bg-gray-900 text-white text-sm px-4 py-2 rounded-lg hover:bg-gray-800"
+          >
+            Crear propuesta comercial
+          </Link>
+        </div>
+      )}
 
       {/* Resultado de la venta */}
       {isSent && (

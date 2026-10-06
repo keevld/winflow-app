@@ -27,12 +27,20 @@ export default async function DashboardPage() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-xl font-bold text-gray-900">Propuestas</h1>
-        <Link
-          href="/proposals/new"
-          className="bg-gray-900 text-white text-sm px-4 py-2 rounded-lg hover:bg-gray-800"
-        >
-          + Nueva propuesta
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link
+            href="/proposals/commercial/new"
+            className="bg-white text-gray-900 text-sm px-4 py-2 rounded-lg border border-gray-300 hover:bg-gray-50"
+          >
+            + Propuesta comercial
+          </Link>
+          <Link
+            href="/proposals/new"
+            className="bg-gray-900 text-white text-sm px-4 py-2 rounded-lg hover:bg-gray-800"
+          >
+            + Nueva propuesta
+          </Link>
+        </div>
       </div>
 
       {!proposals?.length ? (
@@ -70,6 +78,12 @@ export default async function DashboardPage() {
                       </span>
                     )
                   })()}
+                  {p.proposal_type === 'commercial' && (
+                    <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-indigo-100 text-indigo-800">Comercial</span>
+                  )}
+                  {p.accepted_at && (
+                    <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800">Aceptada</span>
+                  )}
                   {p.outcome === 'won' && (
                     <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-emerald-600 text-white">Ganada</span>
                   )}

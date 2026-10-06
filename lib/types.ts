@@ -34,6 +34,17 @@ export interface Proposal {
   outcome: 'won' | 'lost' | null
   outcome_at: string | null
   outcome_reason: string | null
+  proposal_type: 'intro' | 'commercial'
+  parent_proposal_id: string | null
+  pricing_mode: 'packages' | 'single' | 'lines' | null
+  commercial: import('./commercial').CommercialContent | null
+  valid_until: string | null
+  accepted_at: string | null
+  accepted_by_name: string | null
+  accepted_option: string | null
+  accepted_comment: string | null
+  call_notes: string | null
+  failure_reason?: string | null
   created_at: string
   updated_at: string
 }
