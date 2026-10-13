@@ -16,6 +16,11 @@ export async function GET() {
     key_prefix: key ? key.slice(0, 7) : null,
     key_has_whitespace: key ? /\s/.test(key) : null,
     similar_names: similar,
+    env_var_names: Object.keys(process.env)
+      .filter(k => !/^(npm_|__|_|LAMBDA|AWS_|NODE|PATH|PWD|HOME|LANG|TZ|SHLVL|OLDPWD|LD_)/i.test(k))
+      .sort(),
+    checked_at: new Date().toISOString(),
+    vercel_url: process.env.VERCEL_URL ?? null,
     vercel_env: process.env.VERCEL_ENV ?? null,
     deployment: process.env.VERCEL_DEPLOYMENT_ID ?? null,
     commit: process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7) ?? null,
