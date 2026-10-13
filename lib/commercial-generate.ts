@@ -102,7 +102,13 @@ export async function generateCommercial(
   }
   const catalogIds = new Set(catalog.map(p => asStr(p.id)))
   const priceRows = (pricing.data ?? []) as Row[]
-  const storyRows = (stories.data ?? []) as Row[]
+  // Nunca mostrarle al prospecto un "caso de éxito" con su propio nombre.
+  const norm = (t: string) => t.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]/g, '')
+  const prospectKey = norm(proposal.prospect_company ?? '')
+  const storyRows = ((stories.data ?? []) as Row[]).filter(st => {
+    const k = norm(asStr(st.company_example))
+    return !(prospectKey && k && (k === prospectKey || k.includes(prospectKey) || prospectKey.includes(k)))
+  })
   const objectionRows = (objections.data ?? []) as Row[]
 
   const preselected = input.selectedProductIds.filter(id => catalogIds.has(id))
@@ -127,6 +133,10 @@ export async function generateCommercial(
     '4. Escribe con el tono de la agencia, claro y concreto, sin relleno ni frases genéricas. Conecta cada servicio con un dolor concreto que el prospecto mencionó.',
     '5. Si falta información para algo (por ejemplo plazos), propón un estimado razonable y márcalo como "estimado" en la descripción.',
     '6. NO inventes hechos sobre el prospecto: su historia, intentos previos, experiencias pasadas, competidores, cifras ni citas que no estén en <notas_llamada> o <datos_prospecto>. Si algo no se dijo en la llamada, no lo afirmes; omítelo o plantéalo como pregunta o supuesto a confirmar.',
+    '7. Háblale SIEMPRE al prospecto en segunda persona del singular ("tú", "tu equipo", "tu marca") y nunca en tercera persona sobre él. La agencia habla en primera persona del plural ("nosotros").',
+    '8. "next_steps" son pasos para cerrar: revisar la propuesta, resolver dudas, elegir opción, aceptar y arrancar. NO le pidas al prospecto su presupuesto ni información que ya tiene la propuesta (precios y opciones los pone el sistema).',
+    '9. En modo paquetes, cada paquete debe diferir en ALCANCE (servicios distintos o cantidades con sentido), no ser el mismo servicio repetido con más cantidad, salvo que el catálogo tenga un solo servicio.',
+    '10. Si el catálogo marca que un servicio excluye algo (por ejemplo honorarios de terceros), no lo prometas como incluido.',
     'Responde ÚNICAMENTE con un objeto JSON válido, sin texto adicional ni bloques de código.',
   ].join('\n')
 
@@ -188,6 +198,7 @@ Devuelve este JSON exacto:
   },
   "proof_story_ids": ["id de 1 a 2 casos de éxito más relevantes"],
   "objection_ids": ["id de 2 a 4 objeciones que este prospecto probablemente tendrá"],
+  "objection_questions": [{ "id": "id de la objeción", "question": "La misma duda reformulada como pregunta neutral y respetuosa en segunda persona, p. ej. ¿Qué hace distinto a nuestro enfoque? (máx. 120 caracteres; no inventes datos)" }],
   "packages": [{ "key": "basic|recommended|complete", "label": "Nombre", "recommended": false, "items": [{ "product_id": "id", "quantity": 1 }] }]
 }
 ${mode === 'packages' ? '' : 'En este modo "packages" debe ir como lista vacía.'}
@@ -292,7 +303,13 @@ ${mode === 'packages' ? '' : 'En este modo "packages" debe ir como lista vacía.
     .map(id => objectionRows.find(o => asStr(o.id) === id))
     .filter((o): o is Row => !!o)
     .slice(0, 4)
-    .map(o => ({ q: asStr(o.objection), a: asStr(o.response) }))
+    .map(o => {
+      const rewritten = Array.isArray(raw.objection_questions)
+        ? (raw.objection_questions as Row[]).find(x => asStr(x.id) === asStr(o.id))
+        : undefined
+      const q = asStr(rewritten?.question).trim()
+      return { q: q && q.length <= 160 ? q : asStr(o.objection), a: asStr(o.response) }
+    })
 
   // Incluye / excluye del catálogo como condiciones verificables
   const extra: string[] = []
