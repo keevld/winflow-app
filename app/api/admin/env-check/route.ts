@@ -6,7 +6,7 @@ import { getPlatformAdmin } from '@/lib/platform-admin'
 export async function GET() {
   const admin = await getPlatformAdmin()
   if (!admin) return NextResponse.json({ error: 'Not found' }, { status: 404 })
-  const key = process.env.ANTHROPIC_API_KEY
+  const key = process.env.ANTHROPIC_API_KEY || process.env.WINFLOW_ANTHROPIC_KEY
   const similar = Object.keys(process.env)
     .filter(k => /anthr|claude|api_key/i.test(k))
     .map(k => JSON.stringify(k))

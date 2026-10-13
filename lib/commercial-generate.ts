@@ -50,8 +50,9 @@ function extractJson(text: string): unknown {
 }
 
 async function callClaude(system: string, user: string): Promise<string> {
-  const key = process.env.ANTHROPIC_API_KEY
-  if (!key) throw new Error('ANTHROPIC_API_KEY no está configurada en el servidor')
+  // Acepta WINFLOW_ANTHROPIC_KEY como alternativa por si ANTHROPIC_API_KEY no llega al servidor.
+  const key = process.env.ANTHROPIC_API_KEY || process.env.WINFLOW_ANTHROPIC_KEY
+  if (!key) throw new Error('La clave de Anthropic no está configurada en el servidor (ANTHROPIC_API_KEY o WINFLOW_ANTHROPIC_KEY)')
   const res = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: {
