@@ -125,6 +125,8 @@ function AgencySection({ initialClient, initialBrand }: { initialClient: Client 
     competitive_differentiators: initialBrand?.competitive_differentiators ?? '',
     price_context: initialBrand?.price_context ?? '',
     proposal_style_notes: initialBrand?.proposal_style_notes ?? '',
+    about_agency: initialBrand?.about_agency ?? '',
+    standard_terms: initialBrand?.standard_terms ?? '',
   })
   const [saving, setSaving] = useState(false)
   const [msg, setMsg] = useState('')
@@ -227,6 +229,17 @@ function AgencySection({ initialClient, initialBrand }: { initialClient: Client 
         <Field label="Diferenciadores competitivos"><textarea rows={3} className={textareaCls} value={form.competitive_differentiators} onChange={e => set('competitive_differentiators', e.target.value)} /></Field>
         <Field label="Contexto de precios (cómo hablar de precio)"><textarea rows={2} className={textareaCls} value={form.price_context} onChange={e => set('price_context', e.target.value)} /></Field>
         <Field label="Notas de estilo para las propuestas"><textarea rows={2} className={textareaCls} value={form.proposal_style_notes} onChange={e => set('proposal_style_notes', e.target.value)} /></Field>
+      </div>
+
+      <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
+        <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide">Quiénes somos y condiciones</h2>
+        <Field label="Sobre la agencia (años, presencia, clientes, qué hacen)">
+          <textarea rows={4} className={textareaCls} value={form.about_agency} onChange={e => set('about_agency', e.target.value)} />
+        </Field>
+        <Field label="Condiciones estándar (una por línea: anticipo, revisiones, derechos de uso, impuestos…)">
+          <textarea rows={7} className={textareaCls} value={form.standard_terms} onChange={e => set('standard_terms', e.target.value)} />
+        </Field>
+        <p className="text-xs text-gray-400">Estas condiciones se agregan tal cual a cada propuesta comercial. La IA no las inventa ni las cambia.</p>
       </div>
 
       <SaveBar saving={saving} msg={msg} onSave={handleSave} />

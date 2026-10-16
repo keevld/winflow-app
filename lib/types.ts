@@ -99,6 +99,8 @@ export interface BrandVoice {
   price_context: string | null
   proposal_style_notes: string | null
   proposal_example_url: string | null
+  about_agency: string | null
+  standard_terms: string | null
 }
 
 export interface SalesProcess {

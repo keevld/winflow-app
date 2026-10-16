@@ -11,6 +11,7 @@ const BRAND_FIELDS = [
   'primary_color', 'secondary_color', 'accent_color',
   'competitive_differentiators', 'price_context',
   'proposal_style_notes', 'proposal_example_url', 'logo_base64',
+  'about_agency', 'standard_terms',
 ] as const
 
 const HEX = /^#[0-9a-fA-F]{6}$/

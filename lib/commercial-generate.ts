@@ -87,7 +87,7 @@ export async function generateCommercial(
   // ── 1. Conocimiento de la agencia (siempre filtrado por client_id) ──
   const [client, brand, products, pricing, pains, objections, stories, process] = await Promise.all([
     service.from('clients').select('company_name, industry, website').eq('id', clientId).maybeSingle(),
-    service.from('brand_voice').select('tone, language_style, avoid_words, example_phrase, competitive_differentiators, price_context, proposal_style_notes').eq('client_id', clientId).maybeSingle(),
+    service.from('brand_voice').select('tone, language_style, avoid_words, example_phrase, competitive_differentiators, price_context, proposal_style_notes, about_agency, standard_terms').eq('client_id', clientId).maybeSingle(),
     service.from('products').select('id, name, description, category').eq('client_id', clientId).eq('is_active', true),
     service.from('pricing').select('id, product_id, price_type, price_amount, price_min, price_max, currency, billing_period, includes, excludes, negotiable, notes').eq('client_id', clientId),
     service.from('pain_points').select('pain, impact').eq('client_id', clientId).limit(15),
@@ -110,6 +110,8 @@ export async function generateCommercial(
     return !(prospectKey && k && (k === prospectKey || k.includes(prospectKey) || prospectKey.includes(k)))
   })
   const objectionRows = (objections.data ?? []) as Row[]
+  const standardTerms = asStr((brand.data as Row | null)?.standard_terms)
+    .split('\n').map(l => l.trim()).filter(Boolean).slice(0, 10)
   // Textos pegados de cotizaciones viejas en MAYÚSCULAS: pasarlos a oración normal.
   const tidyCaps = (t: string): string => {
     const letters = t.replace(/[^A-Za-zÁÉÍÓÚÜÑáéíóúüñ]/g, '')
@@ -156,6 +158,7 @@ export async function generateCommercial(
     '12. Si hay fecha_deseada, el cronograma debe poder cumplirla contando desde fecha_hoy: paraleliza fases (por ejemplo producción mientras se selecciona a los perfiles) y ajusta duraciones. Si aun así no cabe, dilo con claridad en una condición ("terms") y en el cronograma; nunca prometas una fecha que tu propio cronograma contradice.',
     '13. Si hay presupuesto_mencionado, usa precio_referencia del catálogo para dimensionar los paquetes: al menos un paquete debe caber en ese presupuesto y el recomendado debe quedar cerca de él. Si recomiendas un paquete que lo supera, el resumen ejecutivo debe justificar en una frase por qué vale la pena. Recuerda que los honorarios de terceros (por ejemplo, de influencers) suelen ir aparte y debes decirlo.',
     '14. En <objeciones_conocidas> elige SOLO objeciones cuya respuesta esté redactada en voz de la agencia y responda de verdad la duda. Descarta respuestas que sean fragmentos, notas de una llamada o que hablen como el cliente. La pregunta que reformules debe corresponder exactamente a lo que la respuesta contesta. Si ninguna sirve, devuelve objection_ids vacío.',
+    '15. <condiciones_estandar> son las condiciones oficiales de la agencia y el sistema las agrega solas a la propuesta. En "terms" NO las repitas ni las contradigas; incluye solo condiciones adicionales específicas de esta propuesta que sí estén respaldadas por la llamada, o deja la lista vacía. No inventes anticipos, plazos de pago ni derechos de uso.',
     'Responde ÚNICAMENTE con un objeto JSON válido, sin texto adicional ni bloques de código.',
   ].join('\n')
 
@@ -167,7 +170,7 @@ export async function generateCommercial(
 
   const user = `
 <agencia>
-${JSON.stringify({ nombre: client.data?.company_name, industria: client.data?.industry, sitio: client.data?.website })}
+${JSON.stringify({ nombre: client.data?.company_name, industria: client.data?.industry, sitio: client.data?.website, sobre_la_agencia: (brand.data as Row | null)?.about_agency ?? null })}
 </agencia>
 <voz_de_marca>
 ${JSON.stringify(brand.data ?? {})}
@@ -198,6 +201,9 @@ ${JSON.stringify(objectionRows.map(o => ({ id: o.id, objecion: o.objection, resp
 <proceso_de_venta>
 ${JSON.stringify(process.data ?? {})}
 </proceso_de_venta>
+<condiciones_estandar>
+${standardTerms.join('\n') || '(la agencia no ha definido condiciones estándar)'}
+</condiciones_estandar>
 
 Servicios que el vendedor ya eligió: ${preselected.length ? JSON.stringify(preselected) : 'ninguno (elige tú de 1 a 4 servicios del catálogo según la llamada)'}.
 Modo de precios: ${modeInstructions[mode]}
@@ -339,7 +345,7 @@ ${mode === 'packages' ? '' : 'En este modo "packages" debe ir como lista vacía.
       if (asStr(r.excludes)) extra.push(`No incluye (${name}): ${asStr(r.excludes)}`)
     }
   }
-  content.terms = [...content.terms, ...extra].slice(0, 12)
+  content.terms = [...standardTerms, ...content.terms.filter(t => !standardTerms.includes(t)), ...extra].slice(0, 16)
 
   return { content, items, warnings }
 }
