@@ -110,6 +110,17 @@ export async function generateCommercial(
     return !(prospectKey && k && (k === prospectKey || k.includes(prospectKey) || prospectKey.includes(k)))
   })
   const objectionRows = (objections.data ?? []) as Row[]
+  // Textos pegados de cotizaciones viejas en MAYÚSCULAS: pasarlos a oración normal.
+  const tidyCaps = (t: string): string => {
+    const letters = t.replace(/[^A-Za-zÁÉÍÓÚÜÑáéíóúüñ]/g, '')
+    if (letters.length < 20) return t
+    const upper = letters.replace(/[^A-ZÁÉÍÓÚÜÑ]/g, '').length
+    if (upper / letters.length < 0.6) return t
+    return t
+      .toLowerCase()
+      .replace(/\s+-\s+/g, '; ')
+      .replace(/(^\s*|[.:;]\s+)([a-záéíóúüñ])/g, (_m, pre: string, c: string) => pre + c.toUpperCase())
+  }
 
   const preselected = input.selectedProductIds.filter(id => catalogIds.has(id))
 
@@ -120,6 +131,10 @@ export async function generateCommercial(
     description: p.description,
     category: p.category,
     has_price: priceRows.some(r => r.product_id === p.id && (r.price_amount !== null || r.price_min !== null)),
+    precio_referencia: (() => {
+      const r = priceRows.find(x => x.product_id === p.id && x.price_amount !== null)
+      return r ? { monto: r.price_amount, moneda: r.currency, periodo: r.billing_period } : null
+    })(),
     includes: priceRows.filter(r => r.product_id === p.id).map(r => r.includes).filter(Boolean),
   }))
 
@@ -137,6 +152,10 @@ export async function generateCommercial(
     '8. "next_steps" son pasos para cerrar: revisar la propuesta, resolver dudas, elegir opción, aceptar y arrancar. NO le pidas al prospecto su presupuesto ni información que ya tiene la propuesta (precios y opciones los pone el sistema).',
     '9. En modo paquetes, cada paquete debe diferir en ALCANCE (servicios distintos o cantidades con sentido), no ser el mismo servicio repetido con más cantidad, salvo que el catálogo tenga un solo servicio.',
     '10. Si el catálogo marca que un servicio excluye algo (por ejemplo honorarios de terceros), no lo prometas como incluido.',
+    '11. Lo que está en <dolores_tipicos_de_clientes> son hipótesis generales de la agencia, NO hechos de este prospecto. En "summary" y "situation" afirma solo lo que aparece en <notas_llamada> o <datos_prospecto>; esos dolores genéricos puedes usarlos, a lo sumo, como supuesto a confirmar ("si es tu caso…"), nunca como algo que el prospecto vive, dijo o intentó.',
+    '12. Si hay fecha_deseada, el cronograma debe poder cumplirla contando desde fecha_hoy: paraleliza fases (por ejemplo producción mientras se selecciona a los perfiles) y ajusta duraciones. Si aun así no cabe, dilo con claridad en una condición ("terms") y en el cronograma; nunca prometas una fecha que tu propio cronograma contradice.',
+    '13. Si hay presupuesto_mencionado, usa precio_referencia del catálogo para dimensionar los paquetes: al menos un paquete debe caber en ese presupuesto y el recomendado debe quedar cerca de él. Si recomiendas un paquete que lo supera, el resumen ejecutivo debe justificar en una frase por qué vale la pena. Recuerda que los honorarios de terceros (por ejemplo, de influencers) suelen ir aparte y debes decirlo.',
+    '14. En <objeciones_conocidas> elige SOLO objeciones cuya respuesta esté redactada en voz de la agencia y responda de verdad la duda. Descarta respuestas que sean fragmentos, notas de una llamada o que hablen como el cliente. La pregunta que reformules debe corresponder exactamente a lo que la respuesta contesta. Si ninguna sirve, devuelve objection_ids vacío.',
     'Responde ÚNICAMENTE con un objeto JSON válido, sin texto adicional ni bloques de código.',
   ].join('\n')
 
@@ -158,6 +177,7 @@ ${JSON.stringify({
   nombre: proposal.prospect_name, cargo: proposal.prospect_title, empresa: proposal.prospect_company,
   industria: proposal.prospect_industry, tamano: proposal.prospect_company_size,
   dolor_inicial: proposal.prospect_pain, presupuesto_mencionado: proposal.budget_hint, fecha_deseada: proposal.desired_deadline,
+  fecha_hoy: new Date().toISOString().slice(0, 10),
 })}
 </datos_prospecto>
 <notas_llamada>
@@ -166,14 +186,14 @@ ${proposal.call_notes ?? '(sin notas)'}
 <catalogo>
 ${JSON.stringify(catalogForPrompt)}
 </catalogo>
-<dolores_tipicos_de_clientes>
+<dolores_tipicos_de_clientes (hipótesis generales, NO hechos de este prospecto)>
 ${JSON.stringify(pains.data ?? [])}
 </dolores_tipicos_de_clientes>
 <casos_de_exito_disponibles>
 ${JSON.stringify(storyRows.map(s => ({ id: s.id, empresa: s.company_example, problema: s.problem, industria: s.relevant_for_industry })))}
 </casos_de_exito_disponibles>
 <objeciones_conocidas>
-${JSON.stringify(objectionRows.map(o => ({ id: o.id, objecion: o.objection })))}
+${JSON.stringify(objectionRows.map(o => ({ id: o.id, objecion: o.objection, respuesta_de_la_agencia: o.response })))}
 </objeciones_conocidas>
 <proceso_de_venta>
 ${JSON.stringify(process.data ?? {})}
@@ -254,7 +274,7 @@ ${mode === 'packages' ? '' : 'En este modo "packages" debe ir como lista vacía.
       currency: row ? asStr(row.currency) || 'USD' : 'USD',
       billing_period: row ? asStr(row.billing_period) || null : null,
       discount_pct: 0,
-      notes: note ?? (row ? asStr(row.includes) || null : null),
+      notes: note ?? (row ? (asStr(row.includes) ? tidyCaps(asStr(row.includes)) : null) : null),
     }
   }
 
