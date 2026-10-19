@@ -40,3 +40,36 @@ export async function requireAdminContext(): Promise<AdminContextResult> {
 export function isAdminContext(ctx: AdminContextResult): ctx is AdminContext {
   return !('error' in ctx)
 }
+
+type MemberContext = {
+  clientId: string
+  userId: string
+  role: string
+  service: Awaited<ReturnType<typeof createServiceClient>>
+}
+
+type MemberContextResult = MemberContext | { error: NextResponse }
+
+// Guard para rutas que cualquier miembro de la agencia (admin o vendedor) puede usar.
+// Las consultas con el cliente de servicio SIEMPRE deben filtrar por clientId.
+export async function requireMemberContext(): Promise<MemberContextResult> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) {
+    return { error: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }) }
+  }
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('client_id, role')
+    .eq('id', user.id)
+    .single()
+  if (!profile?.client_id) {
+    return { error: NextResponse.json({ error: 'No agency assigned to this user' }, { status: 403 }) }
+  }
+  const service = await createServiceClient()
+  return { clientId: profile.client_id, userId: user.id, role: profile.role, service }
+}
+
+export function isMemberContext(ctx: MemberContextResult): ctx is MemberContext {
+  return !('error' in ctx)
+}

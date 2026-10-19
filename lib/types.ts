@@ -49,6 +49,31 @@ export interface Proposal {
   updated_at: string
 }
 
+export interface Contact {
+  id: string
+  client_id: string
+  name: string | null
+  title: string | null
+  company: string | null
+  email: string | null
+  website: string | null
+  industry: string | null
+  company_size: string | null
+  created_at: string
+  updated_at: string
+}
+
+export type ContactNoteKind = 'personal' | 'call' | 'other'
+
+export interface ContactNote {
+  id: string
+  contact_id: string
+  body: string
+  kind: ContactNoteKind
+  noted_on: string
+  created_at: string
+}
+
 export type ProposalEventType = 'view' | 'time_spent'
 
 export interface ProposalEvent {

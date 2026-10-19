@@ -42,14 +42,14 @@ const asNum = (v: unknown): number | null => {
 }
 const asStr = (v: unknown): string => (typeof v === 'string' ? v : '')
 
-function extractJson(text: string): unknown {
+export function extractJson(text: string): unknown {
   const start = text.indexOf('{')
   const end = text.lastIndexOf('}')
   if (start === -1 || end === -1 || end <= start) throw new Error('La IA no devolvió JSON')
   return JSON.parse(text.slice(start, end + 1))
 }
 
-async function callClaude(system: string, user: string): Promise<string> {
+export async function callClaude(system: string, user: string): Promise<string> {
   // Acepta WINFLOW_ANTHROPIC_KEY como alternativa por si ANTHROPIC_API_KEY no llega al servidor.
   const key = process.env.ANTHROPIC_API_KEY || process.env.WINFLOW_ANTHROPIC_KEY
   if (!key) throw new Error('La clave de Anthropic no está configurada en el servidor (ANTHROPIC_API_KEY o WINFLOW_ANTHROPIC_KEY)')
@@ -159,6 +159,7 @@ export async function generateCommercial(
     '13. Si hay presupuesto_mencionado, usa precio_referencia del catálogo para dimensionar los paquetes: al menos un paquete debe caber en ese presupuesto y el recomendado debe quedar cerca de él. Si recomiendas un paquete que lo supera, el resumen ejecutivo debe justificar en una frase por qué vale la pena. Recuerda que los honorarios de terceros (por ejemplo, de influencers) suelen ir aparte y debes decirlo.',
     '14. En <objeciones_conocidas> elige SOLO objeciones cuya respuesta esté redactada en voz de la agencia y responda de verdad la duda. Descarta respuestas que sean fragmentos, notas de una llamada o que hablen como el cliente. La pregunta que reformules debe corresponder exactamente a lo que la respuesta contesta. Si ninguna sirve, devuelve objection_ids vacío.',
     '15. <condiciones_estandar> son las condiciones oficiales de la agencia y el sistema las agrega solas a la propuesta. En "terms" NO las repitas ni las contradigas; incluye solo condiciones adicionales específicas de esta propuesta que sí estén respaldadas por la llamada, o deja la lista vacía. No inventes anticipos, plazos de pago ni derechos de uso.',
+    '16. Casos de éxito ("proof_stories", máximo 2): incluye SOLO casos realmente similares a lo que este prospecto necesita. relevancia "alta" = misma industria Y mismo tipo de trabajo (por ejemplo, restaurante que también quería una campaña con influencers). relevancia "media" = mismo tipo de trabajo en otra industria (por ejemplo, otra campaña con influencers). Un caso de la misma industria pero con un trabajo distinto NO sirve: no lo incluyas. Ordena de mayor a menor relevancia. Si ningún caso es similar en el tipo de trabajo, devuelve la lista vacía; es mejor no mostrar caso que mostrar uno que no aplica.',
     'Responde ÚNICAMENTE con un objeto JSON válido, sin texto adicional ni bloques de código.',
   ].join('\n')
 
@@ -193,7 +194,7 @@ ${JSON.stringify(catalogForPrompt)}
 ${JSON.stringify(pains.data ?? [])}
 </dolores_tipicos_de_clientes>
 <casos_de_exito_disponibles>
-${JSON.stringify(storyRows.map(s => ({ id: s.id, empresa: s.company_example, problema: s.problem, industria: s.relevant_for_industry })))}
+${JSON.stringify(storyRows.map(s => ({ id: s.id, empresa: s.company_example, industria: s.relevant_for_industry, problema: s.problem, que_se_hizo: s.solution })))}
 </casos_de_exito_disponibles>
 <objeciones_conocidas>
 ${JSON.stringify(objectionRows.map(o => ({ id: o.id, objecion: o.objection, respuesta_de_la_agencia: o.response })))}
@@ -222,7 +223,7 @@ Devuelve este JSON exacto:
     "terms": ["Condiciones que sí estén respaldadas por el contexto; si no hay ninguna, lista vacía"],
     "next_steps": ["Siguiente paso claro para avanzar", "..."]
   },
-  "proof_story_ids": ["id de 1 a 2 casos de éxito más relevantes"],
+  "proof_stories": [{ "id": "id del caso", "relevancia": "alta|media", "motivo": "una frase: qué tiene en común con este prospecto" }],
   "objection_ids": ["id de 2 a 4 objeciones que este prospecto probablemente tendrá"],
   "objection_questions": [{ "id": "id de la objeción", "question": "La misma duda reformulada como pregunta neutral y respetuosa en segunda persona, p. ej. ¿Qué hace distinto a nuestro enfoque? (máx. 120 caracteres; no inventes datos)" }],
   "packages": [{ "key": "basic|recommended|complete", "label": "Nombre", "recommended": false, "items": [{ "product_id": "id", "quantity": 1 }] }]
@@ -314,14 +315,17 @@ ${mode === 'packages' ? '' : 'En este modo "packages" debe ir como lista vacía.
   }
 
   // Casos de éxito y objeciones: textos reales aprobados por la agencia
-  const storyIds = Array.isArray(raw.proof_story_ids) ? (raw.proof_story_ids as unknown[]).map(asStr) : []
-  const stories2 = storyIds
-    .map(id => storyRows.find(s => asStr(s.id) === id))
+  const proofPicks = (Array.isArray(raw.proof_stories) ? (raw.proof_stories as Row[]) : [])
+    .map(x => ({ id: asStr(x.id), rel: asStr(x.relevancia).toLowerCase() }))
+    .filter(x => x.rel === 'alta' || x.rel === 'media')
+    .sort((a, b) => (a.rel === b.rel ? 0 : a.rel === 'alta' ? -1 : 1))
+  const stories2 = proofPicks
+    .map(x => storyRows.find(s => asStr(s.id) === x.id))
     .filter((s): s is Row => !!s)
     .slice(0, 2)
   content.proof = stories2.map(s => ({
     company: asStr(s.company_example) || 'Cliente de la agencia',
-    result: [asStr(s.problem), asStr(s.result)].filter(Boolean).join(' → '),
+    result: [asStr(s.problem), asStr(s.solution), asStr(s.result)].filter(Boolean).join(' → '),
   }))
 
   const objIds = Array.isArray(raw.objection_ids) ? (raw.objection_ids as unknown[]).map(asStr) : []

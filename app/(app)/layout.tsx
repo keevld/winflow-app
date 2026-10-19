@@ -25,6 +25,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           <Link href="/dashboard" className="text-sm text-gray-600 hover:text-gray-900">
             Propuestas
           </Link>
+          <Link href="/clients" className="text-sm text-gray-600 hover:text-gray-900">
+            Clientes
+          </Link>
           {isPlatformAdmin && (
             <Link href="/admin" className="text-sm text-gray-600 hover:text-gray-900">
               Panel Winflow

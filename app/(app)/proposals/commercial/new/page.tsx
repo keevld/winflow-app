@@ -17,6 +17,7 @@ function NewCommercialForm() {
   const router = useRouter()
   const params = useSearchParams()
   const fromId = params.get('from')
+  const contactId = params.get('contact')
 
   const [products, setProducts] = useState<{ id: string; name: string }[]>([])
   const [chosen, setChosen] = useState<string[]>([])
@@ -39,6 +40,24 @@ function NewCommercialForm() {
         const res = await fetch('/api/products')
         if (res.ok) setProducts((await res.json()).products ?? [])
       } catch {}
+      if (contactId) {
+        try {
+          const cr = await fetch(`/api/contacts/${contactId}`)
+          if (cr.ok) {
+            const { contact } = await cr.json()
+            setForm(f => ({
+              ...f,
+              prospect_name: contact.name ?? '',
+              prospect_title: contact.title ?? '',
+              prospect_company: contact.company ?? '',
+              prospect_email: contact.email ?? '',
+              prospect_website: contact.website ?? '',
+              prospect_industry: contact.industry ?? '',
+              prospect_company_size: contact.company_size ?? '',
+            }))
+          }
+        } catch {}
+      }
       if (fromId) {
         const supabase = createClient()
         const { data } = await supabase.from('proposals').select('*').eq('id', fromId).single()
@@ -58,7 +77,7 @@ function NewCommercialForm() {
       }
     }
     load()
-  }, [fromId])
+  }, [fromId, contactId])
 
   function toggle(id: string) {
     setChosen(c => (c.includes(id) ? c.filter(x => x !== id) : [...c, id]))
