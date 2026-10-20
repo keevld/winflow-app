@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { sanitizeEmailHtml, injectViewLink } from '@/lib/text'
 import { sanitizeContent } from '@/lib/commercial'
+import { onColor } from '@/lib/color'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
+
+export const maxDuration = 60
 
 export async function POST(
   req: NextRequest,
@@ -127,6 +130,8 @@ export async function POST(
   const viewUrl = full.public_slug ? `${new URL(req.url).origin}/p/${full.public_slug}` : null
 
   let pdfUrl: string | null = null
+  let pdfName = 'Propuesta.pdf'
+  const hasPdf = isCommercial && !!process.env.PDFSHIFT_API_KEY && !!viewUrl
   let html: string
   let subject: string
 
@@ -150,14 +155,31 @@ export async function POST(
     const validity = full.valid_until
       ? `<p style="margin:16px 0 0;font-size:13px;color:#6b7280">Esta propuesta está vigente hasta el ${new Date(`${full.valid_until}T12:00:00`).toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' })}.</p>`
       : ''
-    html = `<div style="font-family:Arial,Helvetica,sans-serif;max-width:560px;margin:0 auto;color:#111827;line-height:1.55">
-<p>${hello}</p>
-<p>Gracias por la conversación. Te comparto la propuesta con alcance, inversión y siguientes pasos${content.title ? `: <strong>${esc(content.title)}</strong>` : ''}.</p>
-<p style="margin:24px 0"><a href="${esc(viewUrl)}" style="background:${color};color:#ffffff;text-decoration:none;padding:12px 22px;border-radius:8px;font-weight:bold;display:inline-block">Ver y aceptar la propuesta</a></p>
-<p style="font-size:13px;color:#6b7280">Desde ahí también puedes descargarla en PDF. Si tienes dudas, responde a este correo.</p>
-${validity}
-<p style="margin:20px 0 0">${esc(agencyName)}</p>
-</div>`
+    if (hasPdf && full.public_slug) {
+      pdfUrl = `${new URL(req.url).origin}/api/public/proposals/${full.public_slug}/pdf`
+      pdfName = `Propuesta - ${(full.prospect_company ?? 'comercial').replace(/[^\w .-]/g, '').trim()}.pdf`
+      // Se genera (y queda en caché) antes de enviar; si falla, el correo sale sin adjunto en vez de fallar.
+      const probe = await fetch(pdfUrl).catch(() => null)
+      if (!probe?.ok) pdfUrl = null
+    }
+    const onBrand = onColor(color)
+    const when = full.valid_until
+      ? new Date(`${full.valid_until}T12:00:00`).toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' })
+      : null
+    html = `<div style="background:#f3f1ec;padding:28px 12px;font-family:Helvetica,Arial,sans-serif">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:580px;margin:0 auto;border-collapse:collapse">
+<tr><td style="background:${color};color:${onBrand};padding:26px 32px;border-radius:14px 14px 0 0;font-family:Georgia,'Times New Roman',serif;font-size:21px;letter-spacing:-0.2px">${esc(agencyName)}</td></tr>
+<tr><td style="background:#ffffff;padding:34px 32px 30px;border-radius:0 0 14px 14px;color:#1b1a18;font-size:16px;line-height:1.6">
+<p style="margin:0 0 18px">${hello}</p>
+<p style="margin:0 0 6px;font-size:13px;color:#6a645c;text-transform:uppercase;letter-spacing:0.5px">Propuesta comercial</p>
+<h1 style="margin:0 0 18px;font-family:Georgia,'Times New Roman',serif;font-weight:normal;font-size:27px;line-height:1.2;letter-spacing:-0.4px;color:#1b1a18">${esc(content.title || `Propuesta para ${full.prospect_company ?? 'tu empresa'}`)}</h1>
+<p style="margin:0 0 26px;color:#36322d">Gracias por la conversación. Aquí está la propuesta con el alcance, la inversión y los siguientes pasos. Puedes revisarla, descargarla y aceptarla directamente desde el enlace.</p>
+<p style="margin:0 0 26px"><a href="${esc(viewUrl)}" style="background:${color};color:${onBrand};text-decoration:none;padding:14px 26px;border-radius:10px;font-weight:bold;font-size:16px;display:inline-block">Ver la propuesta</a></p>
+${when ? `<p style="margin:0 0 6px;font-size:14px;color:#6a645c">Vigente hasta el ${when}.</p>` : ''}
+<p style="margin:0;font-size:14px;color:#6a645c">${pdfUrl ? 'También la encuentras adjunta en PDF. ' : ''}Si tienes dudas, responde a este correo.</p>
+</td></tr>
+<tr><td style="padding:16px 8px 0;text-align:center;font-size:12px;color:#8a847b">${esc(agencyName)}</td></tr>
+</table></div>`
     subject = `Propuesta comercial para ${full.prospect_company ?? 'tu empresa'}`
   } else {
     if (full.pdf_url) {
@@ -187,7 +209,7 @@ ${validity}
       html,
       from_name: agency?.company_name ?? '',
       reply_to: user.email ?? '',
-      ...(pdfUrl ? { pdf_url: pdfUrl, pdf_filename: 'Propuesta.pdf' } : {}),
+      ...(pdfUrl ? { pdf_url: pdfUrl, pdf_filename: pdfName } : {}),
     }),
   })
 

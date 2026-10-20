@@ -5,12 +5,11 @@ import { useState } from 'react'
 interface Opt { key: string; label: string; total: string }
 
 export default function AcceptBox({
-  slug, options, needsChoice, color, expired, acceptedBy, acceptedAt,
+  slug, options, needsChoice, expired, acceptedBy, acceptedAt,
 }: {
   slug: string
   options: Opt[]
   needsChoice: boolean
-  color: string
   expired: boolean
   acceptedBy: string | null
   acceptedAt: string | null
@@ -47,49 +46,43 @@ export default function AcceptBox({
 
   if (done) {
     return (
-      <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-6 text-center">
-        <p className="text-lg font-semibold text-emerald-800">¡Propuesta aceptada!</p>
-        <p className="text-sm text-emerald-700 mt-1">
-          {who ? `Gracias, ${who}. ` : ''}Nos pondremos en contacto contigo muy pronto para los siguientes pasos.
-        </p>
+      <div className="pd-done" role="status">
+        <h2>¡Propuesta aceptada!</h2>
+        <p>{who ? `Gracias, ${who}. ` : ''}Nos pondremos en contacto contigo muy pronto para los siguientes pasos.</p>
       </div>
     )
   }
 
   if (expired) {
     return (
-      <div className="rounded-xl border border-amber-200 bg-amber-50 p-6 text-center text-sm text-amber-800">
+      <div className="pd-expired">
         Esta propuesta ya venció. Escríbenos y te enviamos una versión actualizada.
       </div>
     )
   }
 
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-6 space-y-4 print:hidden">
-      <h2 className="text-lg font-semibold text-gray-900">Aceptar propuesta</h2>
+    <form className="pd-accept pd-noprint" onSubmit={e => { e.preventDefault(); accept() }}>
+      <h2>Aceptar propuesta</h2>
+      <p className="pd-accept-sub">{needsChoice ? 'Elige la opción que prefieres y confirma con tu nombre.' : 'Confirma con tu nombre para dar el siguiente paso.'}</p>
       {needsChoice && (
-        <div className="space-y-2">
-          <p className="text-sm text-gray-600">Elige la opción que prefieres:</p>
+        <div style={{ display: 'grid', gap: 10 }}>
           {options.map(o => (
-            <label key={o.key} className="flex items-center gap-3 rounded-lg border border-gray-200 px-4 py-3 text-sm cursor-pointer has-[:checked]:border-gray-900">
+            <label key={o.key} className="pd-opt">
               <input type="radio" name="opt" value={o.key} checked={option === o.key} onChange={() => setOption(o.key)} />
-              <span className="flex-1 text-gray-900">{o.label}</span>
-              <span className="text-gray-600">{o.total}</span>
+              <span className="pd-opt-label">{o.label}</span>
+              <span className="pd-opt-total">{o.total}</span>
             </label>
           ))}
         </div>
       )}
-      <input value={name} onChange={e => setName(e.target.value)} placeholder="Tu nombre completo"
-        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm" maxLength={120} />
-      <textarea value={comment} onChange={e => setComment(e.target.value)} placeholder="Comentarios (opcional)"
-        rows={2} maxLength={1000} className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm" />
-      {error && <p className="text-sm text-red-600">{error}</p>}
-      <button onClick={accept} disabled={busy}
-        className="w-full rounded-xl px-6 py-3 text-sm font-medium text-white disabled:opacity-50"
-        style={{ backgroundColor: color }}>
+      <input className="pd-field" value={name} onChange={e => setName(e.target.value)} placeholder="Tu nombre completo" maxLength={120} autoComplete="name" />
+      <textarea className="pd-field" value={comment} onChange={e => setComment(e.target.value)} placeholder="Comentarios (opcional)" rows={2} maxLength={1000} />
+      {error && <p className="pd-error" role="alert">{error}</p>}
+      <button type="submit" disabled={busy} className="pd-btn pd-btn-primary">
         {busy ? 'Enviando…' : 'Aceptar propuesta'}
       </button>
-      <p className="text-xs text-gray-400 text-center">Al aceptar confirmas tu interés en avanzar con las condiciones descritas arriba.</p>
-    </div>
+      <p className="pd-fine">Al aceptar confirmas tu interés en avanzar con las condiciones descritas arriba.</p>
+    </form>
   )
 }
