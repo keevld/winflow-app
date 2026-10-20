@@ -404,16 +404,26 @@
 }
 
 /* ── Impresión / PDF ─────────────────────────────────────────── */
-@page { size: Letter; margin: 16mm 15mm 18mm; }
-@page cover { size: Letter; margin: 0; }
+/* Hoja sin margen del navegador: así no se imprimen fecha/URL/paginación. Ver PrintSheet. */
+@page { size: Letter; margin: 0; }
+
+.pd-sheet, .pd-sheet > tbody, .pd-sheet > tbody > tr, .pd-sheet > tbody > tr > td { display: block; padding: 0; border: 0; }
+.pd-sheet > thead, .pd-sheet > tfoot { display: none; }
 
 @media print {
   .pd { background: #fff; font-size: 11.5pt; }
-  .pd-cover { page: cover; height: 279.4mm; min-height: 0; padding: 18mm 18mm 16mm; break-after: page; }
-  .pd-cover h1 { font-size: 46pt; }
+  .pd-sheet { display: table; width: 100%; border-collapse: collapse; }
+  .pd-sheet > thead { display: table-header-group; }
+  .pd-sheet > tfoot { display: table-footer-group; }
+  .pd-sheet > tbody { display: table-row-group; }
+  .pd-sheet > tbody > tr, .pd-sheet > thead > tr, .pd-sheet > tfoot > tr { display: table-row; }
+  .pd-sheet > tbody > tr > td, .pd-sheet > thead > tr > td, .pd-sheet > tfoot > tr > td { display: table-cell; }
+  .pd-pagepad { height: 16mm; }
+  .pd-cover { height: 100vh; min-height: 0; padding: 18mm 18mm 16mm; break-after: page; }
+  .pd-cover h1 { font-size: clamp(30pt, 8vw, 46pt); }
   .pd-cover-for { font-size: 14pt; }
   .pd-bar, .pd-preview, .pd-accept-wrap, .pd-call, .pd-noprint { display: none !important; }
-  .pd-main { max-width: none; padding: 0; }
+  .pd-main { max-width: none; padding: 0 16mm; }
   .pd-lead { padding-top: 0; font-size: 19pt; }
   .pd-section { break-inside: avoid-page; padding-block: 18pt; gap: 10pt 28pt; }
   .pd-section--long { break-inside: auto; }
@@ -421,9 +431,17 @@
   .pd-pkg, .pd-case, .pd-phase { break-inside: avoid; }
   .pd-pkg--rec { border: 2px solid var(--brand); }
   .pd-section h2 { break-after: avoid; }
+  .pd-solution > div, .pd-faq > div, .pd-steps li, .pd-letter > *, .pd-metric, .pd-closing { break-inside: avoid; }
+  .pd-solution h3, .pd-phase h3, .pd-faq dt { break-after: avoid; }
+  /* En papel las secciones van en bloque (título arriba): las rejillas no se parten bien entre páginas. */
+  .pd-section { display: block; }
+  .pd-section h2 { margin-bottom: 8pt; }
+  .pd-foot { display: none; }
   /* La inversión abre página propia: así los paquetes nunca se parten entre dos hojas. */
-  .pd-section--wide { break-before: page; break-inside: avoid; padding-top: 0; border-top: 0; }
+  #inversion { break-before: page; break-inside: avoid; padding-top: 0; border-top: 0; }
   .pd-packages { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10pt; }
+  .pd-packages > *, .pd-case-grid > *, .pd-metrics > * { min-width: 0; }
+  .pd-pkg h3, .pd-line { overflow-wrap: anywhere; }
   .pd-pkg { padding: 16pt 12pt; }
   .pd-price { font-size: 17pt; }
   .pd-line { font-size: 9pt; }

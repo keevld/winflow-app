@@ -1,6 +1,7 @@
 import type { CSSProperties, ReactNode } from 'react'
 import AcceptBox from './AcceptBox'
 import PrintButton from './PrintButton'
+import PrintSheet from './PrintSheet'
 import { BarContinue, PickButton, SelectionProvider } from './Selection'
 import { itemTotal, type CommercialContent, type PriceItem, type PriceOption } from '@/lib/commercial'
 import { inkColor, luminance, onColor } from '@/lib/color'
@@ -160,6 +161,7 @@ export default function CommercialDocument(p: CommercialDocumentProps) {
         </dl>
       </header>
 
+      <PrintSheet>
       <div className="pd-bar">
         <div className="pd-bar-in">
           <span className="pd-bar-title">{p.agencyName || title}</span>
@@ -283,6 +285,7 @@ export default function CommercialDocument(p: CommercialDocumentProps) {
           <span>Propuesta para {forWhom}{p.issuedAt ? ` · ${longDate(p.issuedAt)}` : ''}</span>
         </footer>
       </main>
+      </PrintSheet>
     </div>
     </SelectionProvider>
   )

@@ -1,5 +1,6 @@
 import type { CSSProperties, ReactNode } from 'react'
 import PrintButton from './PrintButton'
+import PrintSheet from './PrintSheet'
 import { parseIntroText } from '@/lib/intro'
 import { inkColor, luminance, onColor } from '@/lib/color'
 import './proposal.css'
@@ -72,6 +73,7 @@ export default function IntroDocument(p: IntroDocumentProps) {
         </dl>
       </header>
 
+      <PrintSheet>
       <div className="pd-bar">
         <div className="pd-bar-in">
           <span className="pd-bar-title">{p.agencyName}</span>
@@ -124,6 +126,7 @@ export default function IntroDocument(p: IntroDocumentProps) {
           <span>Propuesta para {forWhom}{p.issuedAt ? ` · ${longDate(p.issuedAt)}` : ''}</span>
         </footer>
       </main>
+      </PrintSheet>
     </div>
   )
 }
