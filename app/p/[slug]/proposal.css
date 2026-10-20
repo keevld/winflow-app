@@ -80,6 +80,9 @@
   display: inline-flex;
   align-items: center;
 }
+.pd-logo-plate--dark { background: #14110f; }
+.pd-logo-direct { display: inline-flex; align-items: center; }
+.pd-logo-direct img { height: 44px; max-width: 240px; object-fit: contain; display: block; }
 .pd-logo-plate img { height: 36px; max-width: 200px; object-fit: contain; display: block; }
 .pd-brandname { font-family: var(--serif); font-size: 22px; font-weight: 500; letter-spacing: -0.01em; }
 
@@ -425,3 +428,54 @@
   .pd-pkg, .pd-table { box-shadow: none; }
   .pd-cover-body > *, .pd-meta, .pd-brandmark { animation: none; }
 }
+
+/* ── Elegir paquete y continuar ─────────────────────────────── */
+.pd [id='inversion'], .pd [id='continuar'] { scroll-margin-top: 84px; }
+.pd-pick {
+  appearance: none; cursor: pointer; font: inherit; font-size: 15px; font-weight: 650;
+  margin-top: auto; padding: 12px 16px; border-radius: 10px;
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  background: transparent; color: var(--ink); border: 1.5px solid color-mix(in srgb, var(--ink) 25%, white);
+  transition: background-color 0.15s, border-color 0.15s, color 0.15s, transform 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.pd-pick:hover { border-color: var(--ink); }
+.pd-pick:active { transform: scale(0.98); }
+.pd-pick[aria-pressed='true'] { background: var(--brand); border-color: var(--brand); color: var(--on-brand); }
+.pd-pkg:has(.pd-pick[aria-pressed='true']), .pd-pkg--chosen {
+  border-color: var(--brand); border-width: 2px; background: var(--tint);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--brand) 22%, transparent);
+}
+.pd-btn-ghost { background: transparent; color: var(--ink); border-color: color-mix(in srgb, var(--ink) 30%, white); }
+.pd-btn-ghost:hover { background: var(--card); }
+
+.pd-gate { border: 1.5px dashed color-mix(in srgb, var(--ink) 25%, white); border-radius: 12px; padding: 18px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; color: var(--muted); }
+.pd-chosen { display: flex; align-items: center; gap: 12px; border: 1px solid var(--brand); background: var(--tint); border-radius: 12px; padding: 14px 16px; }
+.pd-chosen-tick { width: 22px; height: 22px; border-radius: 50%; background: var(--brand); color: var(--on-brand); display: grid; place-items: center; font-size: 13px; font-weight: 800; flex-shrink: 0; }
+.pd-chosen-label { font-weight: 650; flex: 1; }
+.pd-chosen-total { color: var(--muted); font-variant-numeric: tabular-nums lining-nums; }
+.pd-link { appearance: none; background: none; border: 0; padding: 0; font: inherit; font-size: 14px; color: var(--brand-ink); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.pd-field[disabled] { opacity: 0.5; cursor: not-allowed; }
+.pd-next { background: var(--paper); border-radius: 12px; padding: 14px 16px; font-size: 14px; color: #36322d; line-height: 1.55; }
+.pd-next strong { color: var(--ink); }
+.pd-note { margin-top: 18px; font-size: 14px; color: var(--muted); max-width: 60ch; padding: 12px 14px; background: var(--tint); border-radius: 10px; }
+
+/* ── Propuesta inicial (carta) ──────────────────────────────── */
+.pd-letter { display: grid; gap: 18px; max-width: 62ch; color: #36322d; }
+.pd-letter .pd-check-list { margin: 2px 0 6px; }
+.pd-metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-top: 12px; }
+.pd-metric { display: flex; flex-direction: column; gap: 4px; padding: 22px 24px; border-radius: 16px; background: var(--tint); }
+.pd-metric-v { font-family: var(--serif); font-size: clamp(40px, 5vw, 56px); line-height: 1; letter-spacing: -0.03em; color: var(--brand-ink); font-variation-settings: 'opsz' 72; }
+.pd-metric-l { font-size: 14px; color: var(--muted); }
+.pd-closing {
+  margin-top: clamp(24px, 4vw, 48px);
+  padding: clamp(28px, 4vw, 48px);
+  border-radius: 20px;
+  background: var(--brand);
+  color: var(--on-brand);
+  display: grid; gap: 24px; break-inside: avoid;
+}
+.pd-closing p { font-family: var(--serif); font-size: clamp(20px, 2.4vw, 28px); line-height: 1.35; letter-spacing: -0.01em; max-width: 36em; text-wrap: pretty; }
+.pd-closing .pd-btn-primary { background: var(--on-brand); color: var(--brand); border-color: var(--on-brand); }
+.pd-closing .pd-btn-primary:hover { background: color-mix(in srgb, var(--on-brand) 90%, var(--brand)); }
+
+.pd-pkg .pd-lines { margin-bottom: 20px; }

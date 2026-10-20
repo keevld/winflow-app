@@ -16,10 +16,11 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
   const sb = await createServiceClient()
   const { data: p } = await sb
     .from('proposals')
-    .select('id, client_id, proposal_type, commercial, valid_until, prospect_company, prospect_name')
+    .select('id, client_id, proposal_type, commercial, proposal_text, valid_until, prospect_company, prospect_name')
     .eq('public_slug', slug)
     .maybeSingle()
-  if (!p || p.proposal_type !== 'commercial') return NextResponse.json({ error: 'No encontrada' }, { status: 404 })
+  const isIntro = p?.proposal_type !== 'commercial'
+  if (!p || (isIntro && !p.proposal_text?.trim())) return NextResponse.json({ error: 'No encontrada' }, { status: 404 })
 
   const [{ data: items }, { data: brand }, { data: agency }] = await Promise.all([
     sb.from('proposal_price_items')
@@ -31,11 +32,11 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
   ])
 
   const hash = createHash('sha1')
-    .update(JSON.stringify([p.commercial, p.valid_until, items, brand, agency, 'v1']))
+    .update(JSON.stringify([p.commercial, p.proposal_text, p.valid_until, items, brand, agency, 'v2']))
     .digest('hex')
     .slice(0, 16)
   const path = `commercial-pdf/${p.id}/${hash}.pdf`
-  const name = `Propuesta - ${p.prospect_company || p.prospect_name || 'comercial'}`.replace(/[^\w .-]/g, '').trim()
+  const name = `Propuesta - ${p.prospect_company || p.prospect_name || (isIntro ? 'inicial' : 'comercial')}`.replace(/[^\w .-]/g, '').trim()
 
   let bytes: Buffer
   const { data: cached } = await sb.storage.from('proposals').download(path)

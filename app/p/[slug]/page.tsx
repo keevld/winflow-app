@@ -3,6 +3,8 @@ import { createServiceClient } from '@/lib/supabase/server'
 import type { Metadata } from 'next'
 import ViewTracker from './ViewTracker'
 import CommercialDocument from './CommercialDocument'
+import IntroDocument from './IntroDocument'
+import { logoLuminance } from '@/lib/logo'
 import { groupOptions, sanitizeContent, type PriceItem } from '@/lib/commercial'
 
 export const metadata: Metadata = {
@@ -24,7 +26,7 @@ export default async function PublicProposalPage({
 
   const { data: proposal } = await supabase
     .from('proposals')
-    .select('id, client_id, email_html, proposal_text, pdf_url, status, prospect_name, prospect_company, opened_at, proposal_type, pricing_mode, commercial, valid_until, accepted_at, accepted_by_name, created_at, sent_at')
+    .select('id, client_id, email_html, proposal_text, prospect_title, product, pdf_url, status, prospect_name, prospect_company, opened_at, proposal_type, pricing_mode, commercial, valid_until, accepted_at, accepted_by_name, accepted_option, created_at, sent_at')
     .eq('public_slug', slug)
     .single()
 
@@ -90,6 +92,31 @@ export default async function PublicProposalPage({
           expired={expired}
           acceptedBy={proposal.accepted_by_name ?? null}
           acceptedAt={proposal.accepted_at ?? null}
+          acceptedOption={proposal.accepted_option ?? null}
+          logoLum={logo ? await logoLuminance(logo) : null}
+          pdfHref={process.env.PDFSHIFT_API_KEY && !isPrint ? `/api/public/proposals/${slug}/pdf` : null}
+        />
+      </>
+    )
+  }
+
+  if (proposal.proposal_text?.trim()) {
+    return (
+      <>
+        <ViewTracker slug={slug} disabled={isPreview || isPrint} />
+        <IntroDocument
+          text={proposal.proposal_text}
+          color={brandColor}
+          logo={logo}
+          logoLum={logo ? await logoLuminance(logo) : null}
+          agencyName={agency?.company_name ?? ''}
+          prospectName={proposal.prospect_name ?? ''}
+          prospectTitle={proposal.prospect_title ?? ''}
+          prospectCompany={proposal.prospect_company ?? ''}
+          product={proposal.product ?? ''}
+          issuedAt={proposal.sent_at ?? proposal.created_at ?? null}
+          bookingUrl={bookingUrl}
+          preview={isPreview}
           pdfHref={process.env.PDFSHIFT_API_KEY && !isPrint ? `/api/public/proposals/${slug}/pdf` : null}
         />
       </>

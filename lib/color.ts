@@ -10,7 +10,7 @@ function toHex([r, g, b]: [number, number, number]): string {
   return '#' + [r, g, b].map(v => Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, '0')).join('')
 }
 
-function luminance(hex: string): number {
+export function luminance(hex: string): number {
   const [r, g, b] = rgb(hex).map(v => {
     const c = v / 255
     return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4

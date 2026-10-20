@@ -1,8 +1,9 @@
 import type { CSSProperties, ReactNode } from 'react'
 import AcceptBox from './AcceptBox'
 import PrintButton from './PrintButton'
+import { BarContinue, PickButton, SelectionProvider } from './Selection'
 import { itemTotal, type CommercialContent, type PriceItem, type PriceOption } from '@/lib/commercial'
-import { inkColor, onColor } from '@/lib/color'
+import { inkColor, luminance, onColor } from '@/lib/color'
 import './proposal.css'
 
 export interface CommercialDocumentProps {
@@ -25,6 +26,8 @@ export interface CommercialDocumentProps {
   acceptedBy: string | null
   acceptedAt: string | null
   pdfHref?: string | null
+  logoLum?: number | null
+  acceptedOption?: string | null
 }
 
 // Montos sin ceros de relleno y con la moneda, porque la agencia puede vender en varios países de LATAM.
@@ -80,14 +83,14 @@ function Lines({ items }: { items: PriceItem[] }) {
 
 function Case({ company, result }: { company: string; result: string }) {
   const parts = result.split(/\s*→\s*/).filter(Boolean)
-  const labels = ['El reto', 'Lo que hicimos', 'El resultado']
+  const labels = parts.length === 2 ? ['El reto', 'El resultado'] : ['El reto', 'Lo que hicimos', 'El resultado']
   return (
     <div className="pd-case">
       {company && <h3>{company}</h3>}
-      {parts.length === 3 ? (
+      {parts.length === 2 || parts.length === 3 ? (
         <dl className="pd-case-grid">
           {parts.map((p, i) => (
-            <div key={i} className={i === 2 ? 'pd-win' : undefined}>
+            <div key={i} className={i === parts.length - 1 ? 'pd-win' : undefined}>
               <dt>{labels[i]}</dt>
               <dd>{p}</dd>
             </div>
@@ -116,8 +119,19 @@ export default function CommercialDocument(p: CommercialDocumentProps) {
     return acc
   }, {})
   const needsChoice = packages
+  // El logo se pone directo sobre la portada si contrasta con el color de marca; si no, sobre una placa.
+  let logoClass = 'pd-logo-plate'
+  if (p.logoLum !== null && p.logoLum !== undefined) {
+    const bl = luminance(p.color)
+    const ratio = (Math.max(bl, p.logoLum) + 0.05) / (Math.min(bl, p.logoLum) + 0.05)
+    logoClass = ratio >= 3 ? 'pd-logo-direct' : p.logoLum > 0.5 ? 'pd-logo-plate pd-logo-plate--dark' : 'pd-logo-plate'
+  }
+  const selectable = p.canAccept && !p.acceptedAt && !p.expired
+  const planOptions = options.map(o => ({ key: o.key, label: o.label, total: totalsText(o.totals) }))
+  const acceptedLabel = planOptions.find(o => o.key === p.acceptedOption)?.label ?? null
 
   return (
+    <SelectionProvider options={planOptions} needsChoice={needsChoice} initial={p.acceptedOption ?? null}>
     <div className="pd" style={brandStyle}>
       {p.preview && (
         <div className="pd-preview">Vista previa — así la verá tu cliente. No se registran visitas ni se puede aceptar desde aquí.</div>
@@ -126,7 +140,7 @@ export default function CommercialDocument(p: CommercialDocumentProps) {
       <header className="pd-cover">
         <div className="pd-brandmark">
           {p.logo
-            ? <span className="pd-logo-plate">{/* eslint-disable-next-line @next/next/no-img-element */}<img src={p.logo} alt={p.agencyName} /></span>
+            ? <span className={logoClass}>{/* eslint-disable-next-line @next/next/no-img-element */}<img src={p.logo} alt={p.agencyName} /></span>
             : p.agencyName && <span className="pd-brandname">{p.agencyName}</span>}
         </div>
 
@@ -150,9 +164,7 @@ export default function CommercialDocument(p: CommercialDocumentProps) {
           <span className="pd-bar-title">{p.agencyName || title}</span>
           <div className="pd-bar-actions">
             <PrintButton href={p.pdfHref ?? null} />
-            {(p.canAccept || p.acceptedAt) && !p.expired && !p.acceptedAt && (
-              <a href="#aceptar" className="pd-btn pd-btn-primary">Aceptar propuesta</a>
-            )}
+            {selectable && <BarContinue />}
           </div>
         </div>
       </div>
@@ -195,15 +207,16 @@ export default function CommercialDocument(p: CommercialDocumentProps) {
         )}
 
         {options.length > 0 && (
-          <Section title="Inversión" wide>
+          <Section id="inversion" title="Inversión" wide>
             {packages ? (
               <div className="pd-packages">
                 {options.map(o => (
-                  <div key={o.key} className={`pd-pkg${o.recommended ? ' pd-pkg--rec' : ''}`}>
+                  <div key={o.key} className={`pd-pkg${o.recommended ? ' pd-pkg--rec' : ''}${p.acceptedOption === o.key ? ' pd-pkg--chosen' : ''}`}>
                     {o.recommended && <span className="pd-pkg-badge">Recomendada</span>}
                     <h3>{o.label}</h3>
                     <p className="pd-price">{totalsText(o.totals)}</p>
                     <Lines items={o.items} />
+                    {selectable && <PickButton optionKey={o.key} />}
                   </div>
                 ))}
               </div>
@@ -240,18 +253,19 @@ export default function CommercialDocument(p: CommercialDocumentProps) {
         {c.next_steps.length > 0 && (
           <Section title="Siguientes pasos">
             <ol className="pd-steps">{c.next_steps.map((x, i) => <li key={i}>{x}</li>)}</ol>
+            <p className="pd-note">Continuar con esta propuesta no equivale a un contrato firmado: después te enviaremos el contrato, y el proyecto arranca una vez firmado.</p>
           </Section>
         )}
 
         {(p.canAccept || p.acceptedAt) && (
-          <div className="pd-accept-wrap" id="aceptar">
+          <div className="pd-accept-wrap" id="continuar">
             <AcceptBox
               slug={p.slug}
-              needsChoice={needsChoice}
-              options={options.map(o => ({ key: o.key, label: o.label, total: totalsText(o.totals) }))}
+              agencyName={p.agencyName}
               expired={p.expired}
               acceptedBy={p.acceptedBy}
               acceptedAt={p.acceptedAt}
+              acceptedLabel={acceptedLabel}
             />
           </div>
         )}
@@ -268,5 +282,6 @@ export default function CommercialDocument(p: CommercialDocumentProps) {
         </footer>
       </main>
     </div>
+    </SelectionProvider>
   )
 }

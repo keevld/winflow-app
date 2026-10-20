@@ -173,7 +173,7 @@ export async function POST(
 <p style="margin:0 0 18px">${hello}</p>
 <p style="margin:0 0 6px;font-size:13px;color:#6a645c;text-transform:uppercase;letter-spacing:0.5px">Propuesta comercial</p>
 <h1 style="margin:0 0 18px;font-family:Georgia,'Times New Roman',serif;font-weight:normal;font-size:27px;line-height:1.2;letter-spacing:-0.4px;color:#1b1a18">${esc(content.title || `Propuesta para ${full.prospect_company ?? 'tu empresa'}`)}</h1>
-<p style="margin:0 0 26px;color:#36322d">Gracias por la conversación. Aquí está la propuesta con el alcance, la inversión y los siguientes pasos. Puedes revisarla, descargarla y aceptarla directamente desde el enlace.</p>
+<p style="margin:0 0 26px;color:#36322d">Gracias por la conversación. Aquí está la propuesta con el alcance, la inversión y los siguientes pasos. Desde el enlace puedes revisarla, descargarla, elegir tu paquete y continuar.</p>
 <p style="margin:0 0 26px"><a href="${esc(viewUrl)}" style="background:${color};color:${onBrand};text-decoration:none;padding:14px 26px;border-radius:10px;font-weight:bold;font-size:16px;display:inline-block">Ver la propuesta</a></p>
 ${when ? `<p style="margin:0 0 6px;font-size:14px;color:#6a645c">Vigente hasta el ${when}.</p>` : ''}
 <p style="margin:0;font-size:14px;color:#6a645c">${pdfUrl ? 'También la encuentras adjunta en PDF. ' : ''}Si tienes dudas, responde a este correo.</p>
@@ -182,7 +182,16 @@ ${when ? `<p style="margin:0 0 6px;font-size:14px;color:#6a645c">Vigente hasta e
 </table></div>`
     subject = `Propuesta comercial para ${full.prospect_company ?? 'tu empresa'}`
   } else {
-    if (full.pdf_url) {
+    // Con PDFShift configurado, la propuesta inicial también usa el PDF del nuevo diseño.
+    if (process.env.PDFSHIFT_API_KEY && full.public_slug) {
+      const ours = `${new URL(req.url).origin}/api/public/proposals/${full.public_slug}/pdf`
+      const probe = await fetch(ours).catch(() => null)
+      if (probe?.ok) {
+        pdfUrl = ours
+        pdfName = `Propuesta - ${(full.prospect_company ?? 'inicial').replace(/[^\w .-]/g, '').trim()}.pdf`
+      }
+    }
+    if (!pdfUrl && full.pdf_url) {
       const { data: signed } = await service.storage.from('proposals').createSignedUrl(full.pdf_url, 60 * 15)
       pdfUrl = signed?.signedUrl ?? null
     }

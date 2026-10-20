@@ -1,41 +1,44 @@
 'use client'
 
 import { useState } from 'react'
+import { scrollToId, useSelection } from './Selection'
 
-interface Opt { key: string; label: string; total: string }
-
+// "Continuar" ≠ contrato firmado: el cliente confirma su elección y la agencia sigue con el contrato.
 export default function AcceptBox({
-  slug, options, needsChoice, expired, acceptedBy, acceptedAt,
+  slug, agencyName, expired, acceptedBy, acceptedAt, acceptedLabel,
 }: {
   slug: string
-  options: Opt[]
-  needsChoice: boolean
+  agencyName: string
   expired: boolean
   acceptedBy: string | null
   acceptedAt: string | null
+  acceptedLabel: string | null
 }) {
+  const { needsChoice, selected, current } = useSelection()
   const [name, setName] = useState('')
-  const [option, setOption] = useState(needsChoice ? '' : (options[0]?.key ?? ''))
   const [comment, setComment] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [done, setDone] = useState(!!acceptedAt)
   const [who, setWho] = useState(acceptedBy)
+  const [chosenLabel, setChosenLabel] = useState(acceptedLabel)
+  const agency = agencyName || 'la agencia'
 
-  async function accept() {
+  async function go() {
     setError('')
-    if (name.trim().length < 2) { setError('Escribe tu nombre para aceptar.'); return }
-    if (needsChoice && !option) { setError('Elige una de las opciones.'); return }
+    if (needsChoice && !selected) { setError('Elige un paquete para continuar.'); return }
+    if (name.trim().length < 2) { setError('Escribe tu nombre para continuar.'); return }
     setBusy(true)
     try {
       const res = await fetch(`/api/public/proposals/${slug}/accept`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, option, comment }),
+        body: JSON.stringify({ name, option: selected ?? '', comment }),
       })
       const json = await res.json().catch(() => ({}))
-      if (!res.ok) throw new Error(json.error ?? 'No se pudo aceptar')
+      if (!res.ok) throw new Error(json.error ?? 'No se pudo registrar tu elección')
       setWho(name.trim())
+      setChosenLabel(current?.label ?? null)
       setDone(true)
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Error desconocido')
@@ -47,8 +50,12 @@ export default function AcceptBox({
   if (done) {
     return (
       <div className="pd-done" role="status">
-        <h2>¡Propuesta aceptada!</h2>
-        <p>{who ? `Gracias, ${who}. ` : ''}Nos pondremos en contacto contigo muy pronto para los siguientes pasos.</p>
+        <h2>¡Listo, recibimos tu elección!</h2>
+        <p>
+          {who ? `Gracias, ${who}. ` : ''}
+          {chosenLabel ? `Elegiste el paquete ${chosenLabel}. ` : ''}
+          Siguiente paso: {agency} te enviará el contrato para firma. El proyecto arranca una vez que el contrato esté firmado.
+        </p>
       </div>
     )
   }
@@ -61,28 +68,38 @@ export default function AcceptBox({
     )
   }
 
+  const blocked = needsChoice && !selected
+
   return (
-    <form className="pd-accept pd-noprint" onSubmit={e => { e.preventDefault(); accept() }}>
-      <h2>Aceptar propuesta</h2>
-      <p className="pd-accept-sub">{needsChoice ? 'Elige la opción que prefieres y confirma con tu nombre.' : 'Confirma con tu nombre para dar el siguiente paso.'}</p>
+    <form className="pd-accept pd-noprint" onSubmit={e => { e.preventDefault(); go() }}>
+      <h2>Continuar</h2>
+
       {needsChoice && (
-        <div style={{ display: 'grid', gap: 10 }}>
-          {options.map(o => (
-            <label key={o.key} className="pd-opt">
-              <input type="radio" name="opt" value={o.key} checked={option === o.key} onChange={() => setOption(o.key)} />
-              <span className="pd-opt-label">{o.label}</span>
-              <span className="pd-opt-total">{o.total}</span>
-            </label>
-          ))}
-        </div>
+        blocked ? (
+          <div className="pd-gate">
+            <p>Antes de continuar, elige el paquete que prefieres.</p>
+            <button type="button" className="pd-btn" onClick={() => scrollToId('inversion')}>Ver los paquetes</button>
+          </div>
+        ) : (
+          <div className="pd-chosen">
+            <span className="pd-chosen-tick" aria-hidden="true">✓</span>
+            <span className="pd-chosen-label">{current?.label}</span>
+            <span className="pd-chosen-total">{current?.total}</span>
+            <button type="button" className="pd-link" onClick={() => scrollToId('inversion')}>Cambiar</button>
+          </div>
+        )
       )}
-      <input className="pd-field" value={name} onChange={e => setName(e.target.value)} placeholder="Tu nombre completo" maxLength={120} autoComplete="name" />
-      <textarea className="pd-field" value={comment} onChange={e => setComment(e.target.value)} placeholder="Comentarios (opcional)" rows={2} maxLength={1000} />
+
+      <input className="pd-field" value={name} onChange={e => setName(e.target.value)} placeholder="Tu nombre completo" maxLength={120} autoComplete="name" disabled={blocked} />
+      <textarea className="pd-field" value={comment} onChange={e => setComment(e.target.value)} placeholder="Comentarios (opcional)" rows={2} maxLength={1000} disabled={blocked} />
       {error && <p className="pd-error" role="alert">{error}</p>}
-      <button type="submit" disabled={busy} className="pd-btn pd-btn-primary">
-        {busy ? 'Enviando…' : 'Aceptar propuesta'}
+      <button type="submit" disabled={busy || blocked} className="pd-btn pd-btn-primary">
+        {busy ? 'Enviando…' : 'Continuar'}
       </button>
-      <p className="pd-fine">Al aceptar confirmas tu interés en avanzar con las condiciones descritas arriba.</p>
+
+      <div className="pd-next">
+        <p><strong>Esto todavía no es el contrato.</strong> Al continuar le avisamos a {agency} que quieres avanzar con {needsChoice ? 'este paquete' : 'la propuesta'}. Ellos te enviarán el contrato para firma, y el proyecto arranca una vez que esté firmado.</p>
+      </div>
     </form>
   )
 }

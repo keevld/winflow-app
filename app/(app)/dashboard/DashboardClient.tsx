@@ -307,7 +307,7 @@ export default function DashboardClient({ rows }: { rows: DashRow[] }) {
                   <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${ENGAGEMENT_TONE_CLASS[r.engagement.tone]}`}>{r.engagement.label}</span>
                 )}
                 {r.type === 'commercial' && <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-indigo-100 text-indigo-800">Comercial</span>}
-                <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${STAGE_BADGE[r.stage]}`}>{r.stage === 'won' && r.accepted ? 'Aceptada' : STAGE_LABEL[r.stage].replace(/s$/, '')}</span>
+                <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${STAGE_BADGE[r.stage]}`}>{r.stage === 'won' && r.accepted ? 'Falta contrato' : STAGE_LABEL[r.stage].replace(/s$/, '')}</span>
               </div>
             </Link>
           ))}
