@@ -479,3 +479,4 @@
 .pd-closing .pd-btn-primary:hover { background: color-mix(in srgb, var(--on-brand) 90%, var(--brand)); }
 
 .pd-pkg .pd-lines { margin-bottom: 20px; }
+.pd-notice { background: #fff3cd; color: #664d03; border-radius: 10px; padding: 12px 14px; font-size: 14px; }

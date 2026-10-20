@@ -126,7 +126,8 @@ export default function CommercialDocument(p: CommercialDocumentProps) {
     const ratio = (Math.max(bl, p.logoLum) + 0.05) / (Math.min(bl, p.logoLum) + 0.05)
     logoClass = ratio >= 3 ? 'pd-logo-direct' : p.logoLum > 0.5 ? 'pd-logo-plate pd-logo-plate--dark' : 'pd-logo-plate'
   }
-  const selectable = p.canAccept && !p.acceptedAt && !p.expired
+  // El flujo de elegir y continuar se ve siempre (también en la vista previa); solo se envía si canAccept.
+  const selectable = !p.acceptedAt && !p.expired
   const planOptions = options.map(o => ({ key: o.key, label: o.label, total: totalsText(o.totals) }))
   const acceptedLabel = planOptions.find(o => o.key === p.acceptedOption)?.label ?? null
 
@@ -257,7 +258,7 @@ export default function CommercialDocument(p: CommercialDocumentProps) {
           </Section>
         )}
 
-        {(p.canAccept || p.acceptedAt) && (
+        {(p.canAccept || !!p.acceptedAt || !p.expired || p.preview) && (
           <div className="pd-accept-wrap" id="continuar">
             <AcceptBox
               slug={p.slug}
@@ -266,6 +267,7 @@ export default function CommercialDocument(p: CommercialDocumentProps) {
               acceptedBy={p.acceptedBy}
               acceptedAt={p.acceptedAt}
               acceptedLabel={acceptedLabel}
+              previewOnly={!p.canAccept}
             />
           </div>
         )}

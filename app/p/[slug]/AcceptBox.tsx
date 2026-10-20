@@ -5,7 +5,7 @@ import { scrollToId, useSelection } from './Selection'
 
 // "Continuar" ≠ contrato firmado: el cliente confirma su elección y la agencia sigue con el contrato.
 export default function AcceptBox({
-  slug, agencyName, expired, acceptedBy, acceptedAt, acceptedLabel,
+  slug, agencyName, expired, acceptedBy, acceptedAt, acceptedLabel, previewOnly,
 }: {
   slug: string
   agencyName: string
@@ -13,12 +13,14 @@ export default function AcceptBox({
   acceptedBy: string | null
   acceptedAt: string | null
   acceptedLabel: string | null
+  previewOnly: boolean
 }) {
   const { needsChoice, selected, current } = useSelection()
   const [name, setName] = useState('')
   const [comment, setComment] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
+  const [notice, setNotice] = useState('')
   const [done, setDone] = useState(!!acceptedAt)
   const [who, setWho] = useState(acceptedBy)
   const [chosenLabel, setChosenLabel] = useState(acceptedLabel)
@@ -26,8 +28,13 @@ export default function AcceptBox({
 
   async function go() {
     setError('')
+    setNotice('')
     if (needsChoice && !selected) { setError('Elige un paquete para continuar.'); return }
     if (name.trim().length < 2) { setError('Escribe tu nombre para continuar.'); return }
+    if (previewOnly) {
+      setNotice('Vista previa: así continuaría tu cliente. En esta vista no se envía nada ni se avisa a la agencia.')
+      return
+    }
     setBusy(true)
     try {
       const res = await fetch(`/api/public/proposals/${slug}/accept`, {
@@ -93,6 +100,7 @@ export default function AcceptBox({
       <input className="pd-field" value={name} onChange={e => setName(e.target.value)} placeholder="Tu nombre completo" maxLength={120} autoComplete="name" disabled={blocked} />
       <textarea className="pd-field" value={comment} onChange={e => setComment(e.target.value)} placeholder="Comentarios (opcional)" rows={2} maxLength={1000} disabled={blocked} />
       {error && <p className="pd-error" role="alert">{error}</p>}
+      {notice && <p className="pd-notice" role="status">{notice}</p>}
       <button type="submit" disabled={busy || blocked} className="pd-btn pd-btn-primary">
         {busy ? 'Enviando…' : 'Continuar'}
       </button>
