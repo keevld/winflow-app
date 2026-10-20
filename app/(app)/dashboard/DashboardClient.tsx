@@ -42,7 +42,7 @@ function Sparkline({ values, color, label }: { values: number[]; color: string; 
 
 function Delta({ now, before }: { now: number; before: number }) {
   const diff = now - before
-  if (diff === 0) return <span className="text-slate-400">= que el periodo anterior</span>
+  if (diff === 0) return <span className="text-slate-400">igual que el periodo anterior</span>
   return (
     <span className={diff > 0 ? 'text-emerald-300' : 'text-amber-300'}>
       {diff > 0 ? '▲' : '▼'} {Math.abs(diff)} vs periodo anterior
@@ -109,7 +109,8 @@ export default function DashboardClient({ rows }: { rows: DashRow[] }) {
 
   const filtered = useMemo(() => {
     const needle = q.trim().toLowerCase()
-    return rows.filter(r => {
+    const rank: Record<Stage, number> = { viewed: 0, sent: 1, won: 2, prep: 3, lost: 4 }
+    return [...rows].sort((a, b) => rank[a.stage] - rank[b.stage]).filter(r => {
       if (stage !== 'all' && r.stage !== stage) return false
       if (type !== 'all' && r.type !== type) return false
       if (needle && !`${r.company} ${r.name} ${r.product}`.toLowerCase().includes(needle)) return false
@@ -160,13 +161,16 @@ export default function DashboardClient({ rows }: { rows: DashRow[] }) {
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
               <BoardTile label="En seguimiento" value={String(s.open.length)}>
                 <p>{Object.keys(s.openValue).length ? `${formatCompactTotals(s.openValue)} en juego` : 'enviadas sin cerrar'}</p>
+                {period !== 0 && <p><span className="text-slate-200">{s.sentCur.length} enviadas</span> · <Delta now={s.sentCur.length} before={s.sentPrev.length} /></p>}
                 <Sparkline values={s.weeksSent.map(w => w.count)} color="#a5b4fc" label="Propuestas enviadas por semana, últimas 8 semanas" />
               </BoardTile>
 
               <BoardTile label="Ganadas" value={String(s.wonCur.length)}>
                 <p>{Object.keys(s.wonValue).length ? formatCompactTotals(s.wonValue) : 'sin monto registrado'}</p>
                 {period !== 0 && <p><Delta now={s.wonCur.length} before={s.wonPrev.length} /></p>}
-                <Sparkline values={s.weeksWon.map(w => w.count)} color="#6ee7b7" label="Propuestas ganadas por semana, últimas 8 semanas" />
+                {s.weeksWon.some(w => w.count > 0)
+                  ? <Sparkline values={s.weeksWon.map(w => w.count)} color="#6ee7b7" label="Propuestas ganadas por semana, últimas 8 semanas" />
+                  : <p className="h-9 flex items-end text-slate-500">Tu primer cierre aparecerá aquí</p>}
               </BoardTile>
 
               <BoardTile label="Tasa de cierre" value={pct(s.wonCur.length, s.closedBase)}>
@@ -174,11 +178,20 @@ export default function DashboardClient({ rows }: { rows: DashRow[] }) {
                 <div className="h-2 rounded-full bg-white/10" aria-hidden>
                   <div className="h-2 rounded-full bg-emerald-300" style={{ width: s.closedBase ? `${(s.wonCur.length / s.closedBase) * 100}%` : '0%' }} />
                 </div>
-                {period !== 0 && <p><Delta now={s.sentCur.length} before={s.sentPrev.length} /> <span className="text-slate-400">· enviadas</span></p>}
+                <p className="text-slate-400">{s.lostCur.length} perdidas · {s.wonCur.length} ganadas</p>
               </BoardTile>
 
               <BoardTile label="Vencen en 5 días" value={String(s.expiring.length)} tone={s.expiring.length > 0 ? 'warn' : undefined}>
-                <p>{s.expiring.length > 0 ? '⚠ propuestas con vigencia por terminar' : 'nada por vencer pronto'}</p>
+                {s.expiring.length > 0 ? (
+                  <ul className="space-y-1">
+                    {s.expiring.slice(0, 3).map(r => (
+                      <li key={r.id} className="flex justify-between gap-2">
+                        <span className="truncate text-slate-200">{r.company}</span>
+                        <span className="shrink-0 text-amber-300">{daysUntil(r.valid_until)} d</span>
+                      </li>
+                    ))}
+                  </ul>
+                ) : <p>Nada por vencer pronto</p>}
               </BoardTile>
             </div>
           </section>
@@ -206,7 +219,7 @@ export default function DashboardClient({ rows }: { rows: DashRow[] }) {
 
             <div className="bg-white rounded-xl border border-gray-200 p-5">
               <h2 className="text-sm font-semibold text-gray-900">Embudo</h2>
-              <p className="text-xs text-gray-400 mt-0.5 mb-4">De enviadas a ganadas</p>
+              <p className="text-xs text-gray-400 mt-0.5 mb-4">Acumulado: cada etapa incluye las siguientes</p>
               <div className="space-y-4">
                 {funnel.map(f => (
                   <div key={f.label} title={`${f.label}: ${f.n}`}>
@@ -283,11 +296,13 @@ export default function DashboardClient({ rows }: { rows: DashRow[] }) {
                   {r.company}{r.name ? ` · ${r.name}` : ''}
                 </p>
                 <p className="text-xs text-gray-400 mt-0.5 truncate">
-                  {r.product || '—'} · {new Date(r.created_at).toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: 'numeric' })}
-                  {Object.keys(r.value).length > 0 && <> · {formatTotals(r.value)}</>}
+                  {r.product ? `${r.product} · ` : ''}{new Date(r.created_at).toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: 'numeric' })}
                 </p>
               </div>
               <div className="flex items-center gap-2 shrink-0 ml-3">
+                {Object.keys(r.value).length > 0 && (
+                  <span className="text-sm font-semibold text-gray-900 tabular-nums mr-1">{formatTotals(r.value)}</span>
+                )}
                 {r.engagement && (
                   <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${ENGAGEMENT_TONE_CLASS[r.engagement.tone]}`}>{r.engagement.label}</span>
                 )}
