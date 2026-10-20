@@ -425,7 +425,7 @@
   .pd-bar, .pd-preview, .pd-accept-wrap, .pd-call, .pd-noprint { display: none !important; }
   .pd-main { max-width: none; padding: 0 16mm; }
   .pd-lead { padding-top: 0; font-size: 19pt; }
-  .pd-section { break-inside: avoid-page; padding-block: 18pt; gap: 10pt 28pt; }
+  .pd-section { break-inside: avoid; padding-block: 16pt; gap: 10pt 28pt; }
   .pd-section--long { break-inside: auto; }
   .pd-section:first-of-type { margin-top: 12pt; }
   .pd-pkg, .pd-case, .pd-phase { break-inside: avoid; }

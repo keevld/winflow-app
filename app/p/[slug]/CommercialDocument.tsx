@@ -141,7 +141,7 @@ export default function CommercialDocument(p: CommercialDocumentProps) {
 
       <header className="pd-cover">
         <div className="pd-brandmark">
-          {p.logo
+          {p.logo && p.logoLum !== null && p.logoLum !== undefined
             ? <span className={logoClass}>{/* eslint-disable-next-line @next/next/no-img-element */}<img src={p.logo} alt={p.agencyName} /></span>
             : p.agencyName && <span className="pd-brandname">{p.agencyName}</span>}
         </div>
