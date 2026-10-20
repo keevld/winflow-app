@@ -132,7 +132,7 @@ export default function CommercialDocument(p: CommercialDocumentProps) {
   const acceptedLabel = planOptions.find(o => o.key === p.acceptedOption)?.label ?? null
 
   return (
-    <SelectionProvider options={planOptions} needsChoice={needsChoice} initial={p.acceptedOption ?? null}>
+    <SelectionProvider options={planOptions} needsChoice={needsChoice} initial={p.acceptedOption ?? options.find(o => o.recommended)?.key ?? null}>
     <div className="pd" style={brandStyle}>
       {p.preview && (
         <div className="pd-preview">Vista previa — así la verá tu cliente. No se registran visitas ni se puede aceptar desde aquí.</div>

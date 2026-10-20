@@ -263,7 +263,8 @@
   padding: 28px 24px 24px;
   break-inside: avoid;
 }
-.pd-pkg--rec { border: 2px solid var(--brand); background: color-mix(in srgb, var(--brand) 3%, white); position: relative; }
+/* La recomendada solo lleva la etiqueta; el borde y el fondo los da únicamente la selección. */
+.pd-pkg--rec { position: relative; }
 .pd-pkg-badge {
   position: absolute;
   top: -13px;
@@ -418,6 +419,7 @@
   .pd-section--long { break-inside: auto; }
   .pd-section:first-of-type { margin-top: 12pt; }
   .pd-pkg, .pd-case, .pd-phase { break-inside: avoid; }
+  .pd-pkg--rec { border: 2px solid var(--brand); }
   .pd-section h2 { break-after: avoid; }
   /* La inversión abre página propia: así los paquetes nunca se parten entre dos hojas. */
   .pd-section--wide { break-before: page; break-inside: avoid; padding-top: 0; border-top: 0; }
