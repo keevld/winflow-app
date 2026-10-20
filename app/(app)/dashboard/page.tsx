@@ -47,6 +47,7 @@ export default async function DashboardPage() {
       stage,
       accepted: !!p.accepted_at,
       sent_at: p.sent_at,
+      closed_at: p.accepted_at ?? p.outcome_at ?? null,
       last_activity: p.last_viewed_at ?? p.opened_at ?? p.sent_at ?? p.created_at,
       view_count: p.view_count ?? 0,
       valid_until: p.valid_until,
