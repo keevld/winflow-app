@@ -28,6 +28,18 @@ export async function POST(req: NextRequest) {
 
   const { proposal_id, ...prospectData } = body
 
+  // Lista blanca: n8n confía en estos campos. Nunca se reenvía nada más del cuerpo
+  // (client_id, auto_send, manual_proposal_text, etc. los fija el servidor).
+  const ALLOWED_FIELDS = [
+    'prospect_name', 'prospect_title', 'prospect_company', 'prospect_email', 'prospect_website',
+    'prospect_industry', 'prospect_company_size', 'prospect_pain', 'product',
+  ] as const
+  const safeProspect: Record<string, string> = {}
+  for (const k of ALLOWED_FIELDS) {
+    const v = prospectData[k]
+    if (typeof v === 'string') safeProspect[k] = v.trim().slice(0, k === 'prospect_pain' ? 4000 : 300)
+  }
+
   if (!proposal_id || typeof proposal_id !== 'string') {
     return NextResponse.json({ error: 'Missing proposal_id' }, { status: 400 })
   }
@@ -100,10 +112,11 @@ export async function POST(req: NextRequest) {
         'X-Winflow-Secret': secret,
       },
       body: JSON.stringify({
+        // Solo estos campos vienen del cliente; los verificados van DESPUÉS para que no se puedan pisar.
+        ...safeProspect,
         proposal_id,
         client_id: profile.client_id,
         auto_send: false,
-        ...prospectData,
       }),
       signal: AbortSignal.timeout(12_000),
     })

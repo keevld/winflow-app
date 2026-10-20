@@ -35,6 +35,9 @@ export async function POST(
   if (typeof proposal_text !== 'string' || !proposal_text.trim()) {
     return NextResponse.json({ error: 'proposal_text is required' }, { status: 400 })
   }
+  if (proposal_text.length > 30000) {
+    return NextResponse.json({ error: 'El texto es demasiado largo' }, { status: 413 })
+  }
 
   // ── 4. Proposal — load with anon client (RLS pre-filters) ─
   const { data: proposal } = await supabase

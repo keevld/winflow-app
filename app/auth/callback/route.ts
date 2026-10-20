@@ -4,7 +4,9 @@ import { createClient } from '@/lib/supabase/server'
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url)
   const code = searchParams.get('code')
-  const next = searchParams.get('next') ?? '/dashboard'
+  // Solo rutas internas: evita redirigir fuera del sitio con `next=@otro.com` o `next=//otro.com`.
+  const rawNext = searchParams.get('next') ?? ''
+  const next = /^\/(?![/\\])[A-Za-z0-9\-_/?=&.%]*$/.test(rawNext) ? rawNext : '/dashboard'
 
   if (code) {
     const supabase = await createClient()

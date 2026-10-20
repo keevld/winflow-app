@@ -28,7 +28,7 @@ export async function POST(
   try {
     const body = await req.json()
     if (typeof body.proposal_text === 'string' && body.proposal_text.trim()) {
-      bodyProposalText = body.proposal_text
+      bodyProposalText = body.proposal_text.slice(0, 30000)
     }
   } catch {}
 
