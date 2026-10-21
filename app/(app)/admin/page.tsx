@@ -148,6 +148,7 @@ export default async function AdminPage() {
     sent30: sentAll.filter(p => within(p.sent_at as string | null, 30)).length,
     sentPrev30: sentAll.filter(p => within(p.sent_at as string | null, 60, 30)).length,
     wonValue: agencies.reduce((a, g) => addTotals(a, g.stats.wonValue), {} as Record<string, number>),
+    pipeline: agencies.reduce((a, g) => addTotals(a, g.stats.pipeline), {} as Record<string, number>),
     openRate: sentAll.length ? Math.round((sentAll.filter(p => p.opened_at).length / sentAll.length) * 100) : null,
     cost30: agencies.reduce((a, g) => a + g.stats.cost30, 0),
     generations30: agencies.reduce((a, g) => a + g.stats.generations30, 0),

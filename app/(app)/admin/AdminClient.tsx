@@ -185,9 +185,9 @@ export default function AdminClient({ data }: { data: AdminData }) {
             <Sparkline values={platform.sentWeeks} color="#a5b4fc" label="Propuestas enviadas por semana, últimas 8 semanas" />
           </BoardTile>
 
-          <BoardTile label="Valor ganado" value={Object.keys(platform.wonValue).length ? formatCompactTotals(platform.wonValue) : '—'}>
-            <p>{platform.openRate === null ? 'aún sin envíos' : `${platform.openRate}% de las enviadas se abrieron`}</p>
-            <p className="text-slate-400">Suma de lo que aceptaron los prospectos</p>
+          <BoardTile label="Valor ganado" value={Object.keys(platform.wonValue).length ? formatCompactTotals(platform.wonValue) : 'Sin cierres'}>
+            <p>{Object.keys(platform.pipeline).length ? `${formatCompactTotals(platform.pipeline)} en juego (enviadas sin cerrar)` : 'Nada en juego por ahora'}</p>
+            <p className="text-slate-400">{platform.openRate === null ? 'Aún sin envíos' : `${platform.openRate}% de las enviadas se abrieron`}</p>
           </BoardTile>
 
           <BoardTile label="Costo de IA (estimado)" value={usd(platform.cost30)}>

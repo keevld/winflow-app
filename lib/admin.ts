@@ -78,6 +78,7 @@ export interface AdminData {
     sent30: number
     sentPrev30: number
     wonValue: Record<string, number>
+    pipeline: Record<string, number>
     openRate: number | null
     cost30: number
     generations30: number
