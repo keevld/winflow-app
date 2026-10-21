@@ -1,3 +1,5 @@
+import { humanize } from '@/lib/humanize'
+
 // Convierte el texto libre de la propuesta inicial (carta + bloque ---METRICAS---) en partes con las que se puede maquetar.
 
 export type IntroBlock = { type: 'p'; text: string } | { type: 'list'; items: string[] }
@@ -20,7 +22,7 @@ export function parseIntroText(raw: string, bookingUrl: string | null): IntroPar
     .slice(0, 3)
     .map(l => {
       const [v, ...rest] = l.split('|')
-      return { value: v.trim(), label: rest.join('|').trim() }
+      return { value: v.trim(), label: humanize(rest.join('|').trim()) }
     })
     .filter(m => m.value && m.label && m.value !== '—')
 
@@ -29,11 +31,13 @@ export function parseIntroText(raw: string, bookingUrl: string | null): IntroPar
   // "…30 minutos aquí: https://… — cada semana…" → "…30 minutos. Cada semana…" (el botón reemplaza al enlace)
   const urlRe = new RegExp(`\\s*(?:aquí|acá)?\\s*:?\\s*${urlPart}\\s*(?:[—–-]\\s*)?([a-záéíóúñ])?`, 'gi')
   const clean = (t: string) =>
-    t.replace(urlRe, (_m, ch?: string) => '. ' + (ch ? ch.toUpperCase() : ''))
-      .replace(/\.{2,}/g, '.')
-      .replace(/\.\s*\./g, '.')
-      .replace(/[ \t]{2,}/g, ' ')
-      .trim()
+    humanize(
+      t.replace(urlRe, (_m, ch?: string) => '. ' + (ch ? ch.toUpperCase() : ''))
+        .replace(/\.{2,}/g, '.')
+        .replace(/\.\s*\./g, '.')
+        .replace(/[ \t]{2,}/g, ' ')
+        .trim()
+    )
 
   const paras = bodyRaw
     .replace(/\r\n/g, '\n')

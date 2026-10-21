@@ -1,3 +1,4 @@
+import { humanize } from '@/lib/humanize'
 // Tipos y utilidades puras de la propuesta comercial (sirven en servidor y cliente).
 
 export type PricingMode = 'packages' | 'single' | 'lines'
@@ -102,7 +103,7 @@ export function formatTotals(totals: Record<string, number>): string {
 }
 
 const str = (v: unknown, max = 4000): string =>
-  typeof v === 'string' ? v.trim().slice(0, max) : ''
+  typeof v === 'string' ? humanize(v.trim()).slice(0, max) : ''
 
 const strList = (v: unknown, maxItems = 12, max = 500): string[] =>
   Array.isArray(v) ? v.map(x => str(x, max)).filter(Boolean).slice(0, maxItems) : []
