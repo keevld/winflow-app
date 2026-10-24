@@ -130,27 +130,63 @@ function AgencySection({ initialClient, initialBrand }: { initialClient: Client 
   })
   const [saving, setSaving] = useState(false)
   const [msg, setMsg] = useState('')
+  const [logoBusy, setLogoBusy] = useState(false)
+  const [dragOver, setDragOver] = useState(false)
 
   function set<K extends keyof typeof form>(key: K, value: typeof form[K]) {
     setForm(f => ({ ...f, [key]: value }))
   }
 
-  function handleLogoFile(file: File | undefined) {
+  // Procesa el logo en el navegador: lo reduce, revisa que tenga algo visible y lo deja liviano.
+  async function handleLogoFile(file: File | undefined) {
     if (!file) return
     if (!['image/png', 'image/jpeg', 'image/webp'].includes(file.type)) {
       setMsg('El logo debe ser PNG, JPG o WebP')
       return
     }
-    if (file.size > 300 * 1024) {
-      setMsg('El logo pesa más de 300 KB. Comprímelo e inténtalo de nuevo.')
+    if (file.size > 5 * 1024 * 1024) {
+      setMsg('El archivo es demasiado grande (máx. 5 MB).')
       return
     }
-    const reader = new FileReader()
-    reader.onload = () => {
-      set('logo_base64', String(reader.result))
+    setLogoBusy(true)
+    try {
+      const url = URL.createObjectURL(file)
+      const img = new Image()
+      await new Promise<void>((resolve, reject) => {
+        img.onload = () => resolve()
+        img.onerror = () => reject(new Error('No se pudo leer la imagen'))
+        img.src = url
+      })
+      URL.revokeObjectURL(url)
+      const scale = Math.min(1, 800 / img.naturalWidth, 320 / img.naturalHeight)
+      const w = Math.max(1, Math.round(img.naturalWidth * scale))
+      const h = Math.max(1, Math.round(img.naturalHeight * scale))
+      const canvas = document.createElement('canvas')
+      canvas.width = w
+      canvas.height = h
+      const ctx = canvas.getContext('2d')
+      if (!ctx) throw new Error('Tu navegador no pudo procesar la imagen')
+      ctx.drawImage(img, 0, 0, w, h)
+      const px = ctx.getImageData(0, 0, w, h).data
+      let visible = 0
+      for (let i = 3; i < px.length; i += 4) if (px[i] >= 128) visible++
+      if (visible < 50) {
+        setMsg('Esa imagen se ve vacía (es transparente). Sube el logo con su contenido visible.')
+        return
+      }
+      let out = canvas.toDataURL('image/png')
+      if (out.length > 440_000) out = canvas.toDataURL('image/webp', 0.9)
+      if (out.length > 440_000) {
+        setMsg('El logo sigue siendo muy pesado. Prueba con una versión más simple.')
+        return
+      }
+      set('logo_base64', out)
       setMsg('Logo cargado. Pulsa Guardar para aplicarlo.')
+    } catch (err: unknown) {
+      setMsg(err instanceof Error ? err.message : 'No se pudo cargar el logo')
+    } finally {
+      setLogoBusy(false)
     }
-    reader.readAsDataURL(file)
   }
 
   async function handleSave() {
@@ -192,20 +228,36 @@ function AgencySection({ initialClient, initialBrand }: { initialClient: Client 
 
       <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
         <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide">Marca y voz</h2>
-        <Field label="Logo (PNG, JPG o WebP, máx. 300 KB)">
-          <div className="flex items-center gap-4">
-            <div className="w-32 h-16 rounded-lg border border-gray-200 bg-gray-50 flex items-center justify-center overflow-hidden">
+        <Field label="Logo de la agencia">
+          <div
+            onDragOver={e => { e.preventDefault(); setDragOver(true) }}
+            onDragLeave={() => setDragOver(false)}
+            onDrop={e => { e.preventDefault(); setDragOver(false); handleLogoFile(e.dataTransfer.files?.[0]) }}
+            className={`flex items-center gap-4 rounded-xl border-2 border-dashed p-4 transition-colors ${dragOver ? 'border-gray-900 bg-gray-50' : 'border-gray-200'}`}
+          >
+            <div
+              className="w-40 h-20 rounded-lg border border-gray-200 flex items-center justify-center overflow-hidden shrink-0"
+              style={{ backgroundColor: '#f3f4f6', backgroundImage: 'linear-gradient(45deg,#e5e7eb 25%,transparent 25%,transparent 75%,#e5e7eb 75%),linear-gradient(45deg,#e5e7eb 25%,transparent 25%,transparent 75%,#e5e7eb 75%)', backgroundSize: '12px 12px', backgroundPosition: '0 0,6px 6px' }}
+            >
               {form.logo_base64
                 // eslint-disable-next-line @next/next/no-img-element
                 ? <img src={form.logo_base64} alt="Logo de la agencia" className="max-w-full max-h-full object-contain" />
-                : <span className="text-xs text-gray-400">Sin logo</span>}
+                : <span className="text-xs text-gray-500 bg-gray-100/90 px-2 py-0.5 rounded">Sin logo</span>}
             </div>
-            <input type="file" accept="image/png,image/jpeg,image/webp" className="text-xs"
-              onChange={e => handleLogoFile(e.target.files?.[0])} />
-            {form.logo_base64 && (
-              <button type="button" className="text-xs text-red-600 hover:underline"
-                onClick={() => set('logo_base64', '')}>Quitar</button>
-            )}
+            <div className="space-y-2">
+              <div className="flex items-center gap-3">
+                <label className={`inline-flex items-center rounded-lg bg-gray-900 px-3.5 py-2 text-sm font-medium text-white cursor-pointer hover:bg-gray-700 ${logoBusy ? 'opacity-60 pointer-events-none' : ''}`}>
+                  {logoBusy ? 'Procesando...' : form.logo_base64 ? 'Cambiar logo' : 'Subir logo'}
+                  <input type="file" accept="image/png,image/jpeg,image/webp" className="sr-only"
+                    onChange={e => { handleLogoFile(e.target.files?.[0]); e.target.value = '' }} />
+                </label>
+                {form.logo_base64 && (
+                  <button type="button" className="text-sm text-red-600 hover:underline"
+                    onClick={() => { set('logo_base64', ''); setMsg('Logo quitado. Pulsa Guardar para aplicarlo.') }}>Quitar</button>
+                )}
+              </div>
+              <p className="text-xs text-gray-500">O arrastra la imagen aquí. PNG, JPG o WebP. Se ajusta solo de tamaño; mejor con fondo transparente.</p>
+            </div>
           </div>
         </Field>
         <div className="grid grid-cols-2 gap-4">
