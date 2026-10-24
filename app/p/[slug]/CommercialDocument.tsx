@@ -28,6 +28,7 @@ export interface CommercialDocumentProps {
   acceptedAt: string | null
   pdfHref?: string | null
   logoLum?: number | null
+  logoBg?: string | null
   acceptedOption?: string | null
 }
 
@@ -127,6 +128,8 @@ export default function CommercialDocument(p: CommercialDocumentProps) {
     const ratio = (Math.max(bl, p.logoLum) + 0.05) / (Math.min(bl, p.logoLum) + 0.05)
     logoClass = ratio >= 3 ? 'pd-logo-direct' : p.logoLum > 0.5 ? 'pd-logo-plate pd-logo-plate--dark' : 'pd-logo-plate'
   }
+  // Logo con fondo sólido propio: se muestra como insignia, sin placa extra.
+  if (p.logoBg) logoClass = 'pd-logo-badge'
   // El flujo de elegir y continuar se ve siempre (también en la vista previa); solo se envía si canAccept.
   const selectable = !p.acceptedAt && !p.expired
   const planOptions = options.map(o => ({ key: o.key, label: o.label, total: totalsText(o.totals) }))

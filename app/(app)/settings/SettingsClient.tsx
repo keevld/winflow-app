@@ -271,6 +271,7 @@ function AgencySection({ initialClient, initialBrand }: { initialClient: Client 
         setMsg('No encontré un fondo liso que quitar (o el logo ya es transparente).')
         return
       }
+      if (!logoOriginal) setLogoOriginal(form.logo_base64)
       set('logo_base64', canvas.toDataURL('image/png'))
       setMsg('Fondo quitado. Revisa que se vea bien; si no, usa "Restaurar original". Pulsa Guardar para aplicarlo.')
     } catch (err: unknown) {
@@ -348,7 +349,7 @@ function AgencySection({ initialClient, initialBrand }: { initialClient: Client 
                 )}
                 {logoOriginal && form.logo_base64 !== logoOriginal && (
                   <button type="button" className="text-sm text-gray-600 hover:underline"
-                    onClick={() => { set('logo_base64', logoOriginal); setLogoOriginal(null); setMsg('Original restaurado. Pulsa Guardar para aplicarlo.') }}>Restaurar original</button>
+                    onClick={() => { set('logo_base64', logoOriginal); setMsg('Original restaurado. Pulsa Guardar para aplicarlo.') }}>Restaurar original</button>
                 )}
                 {form.logo_base64 && (
                   <button type="button" className="text-sm text-red-600 hover:underline"

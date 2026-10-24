@@ -4,7 +4,7 @@ import type { Metadata } from 'next'
 import ViewTracker from './ViewTracker'
 import CommercialDocument from './CommercialDocument'
 import IntroDocument from './IntroDocument'
-import { logoLuminance } from '@/lib/logo'
+import { logoLuminance, logoBackground } from '@/lib/logo'
 import { groupOptions, sanitizeContent, type PriceItem } from '@/lib/commercial'
 
 export const metadata: Metadata = {
@@ -94,6 +94,7 @@ export default async function PublicProposalPage({
           acceptedAt={proposal.accepted_at ?? null}
           acceptedOption={proposal.accepted_option ?? null}
           logoLum={logo ? await logoLuminance(logo) : null}
+          logoBg={logo ? await logoBackground(logo) : null}
           pdfHref={process.env.PDFSHIFT_API_KEY && !isPrint ? `/api/public/proposals/${slug}/pdf` : null}
         />
       </>
@@ -109,6 +110,7 @@ export default async function PublicProposalPage({
           color={brandColor}
           logo={logo}
           logoLum={logo ? await logoLuminance(logo) : null}
+          logoBg={logo ? await logoBackground(logo) : null}
           agencyName={agency?.company_name ?? ''}
           prospectName={proposal.prospect_name ?? ''}
           prospectTitle={proposal.prospect_title ?? ''}

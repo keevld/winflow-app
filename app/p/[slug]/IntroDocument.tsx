@@ -10,6 +10,7 @@ export interface IntroDocumentProps {
   color: string
   logo: string | null
   logoLum: number | null
+  logoBg?: string | null
   agencyName: string
   prospectName: string
   prospectTitle: string
@@ -43,6 +44,8 @@ export default function IntroDocument(p: IntroDocumentProps) {
     const ratio = (Math.max(bl, p.logoLum) + 0.05) / (Math.min(bl, p.logoLum) + 0.05)
     logoClass = ratio >= 3 ? 'pd-logo-direct' : p.logoLum > 0.5 ? 'pd-logo-plate pd-logo-plate--dark' : 'pd-logo-plate'
   }
+  // Logo con fondo sólido propio: se muestra como insignia, sin placa extra.
+  if (p.logoBg) logoClass = 'pd-logo-badge'
 
   const cta = p.bookingUrl && (
     <a href={p.bookingUrl} target="_blank" rel="noopener noreferrer" className="pd-btn pd-btn-primary">Agendar una llamada</a>

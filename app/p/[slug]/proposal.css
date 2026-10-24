@@ -82,6 +82,8 @@
 }
 .pd-logo-plate--dark { background: #14110f; }
 .pd-logo-direct { display: inline-flex; align-items: center; }
+.pd-logo-badge { display: inline-flex; border-radius: 10px; overflow: hidden; box-shadow: 0 0 0 1px rgba(255,255,255,.22); }
+.pd-logo-badge img { height: 52px; max-width: 280px; object-fit: contain; display: block; }
 .pd-logo-direct img { height: 44px; max-width: 240px; object-fit: contain; display: block; }
 .pd-logo-plate img { height: 36px; max-width: 200px; object-fit: contain; display: block; }
 .pd-brandname { font-family: var(--serif); font-size: 22px; font-weight: 500; letter-spacing: -0.01em; }
