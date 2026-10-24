@@ -234,25 +234,47 @@ function AgencySection({ initialClient, initialBrand }: { initialClient: Client 
         setMsg('Esa imagen se ve vacía (es transparente). Sube el logo con su contenido visible.')
         return
       }
-      const encode = () => {
-        let o = canvas.toDataURL('image/png')
-        if (o.length > 440_000) o = canvas.toDataURL('image/webp', 0.9)
-        return o
-      }
-      const original = encode()
-      const stripped = removeFlatBackground(ctx, w, h)
-      const out = stripped ? canvas.toDataURL('image/png') : original
+      let out = canvas.toDataURL('image/png')
+      if (out.length > 440_000) out = canvas.toDataURL('image/webp', 0.9)
       if (out.length > 440_000) {
         setMsg('El logo sigue siendo muy pesado. Prueba con una versión más simple.')
         return
       }
       set('logo_base64', out)
-      setLogoOriginal(stripped && original.length <= 440_000 ? original : null)
-      setMsg(stripped
-        ? 'Logo cargado y le quitamos el fondo automáticamente. Si se ve mal, usa "Restaurar original". Pulsa Guardar para aplicarlo.'
-        : 'Logo cargado. Pulsa Guardar para aplicarlo.')
+      setLogoOriginal(out)
+      setMsg('Logo cargado. Pulsa Guardar para aplicarlo.')
     } catch (err: unknown) {
       setMsg(err instanceof Error ? err.message : 'No se pudo cargar el logo')
+    } finally {
+      setLogoBusy(false)
+    }
+  }
+
+  // Acción manual: quita un fondo liso del logo actual. Se puede deshacer con "Restaurar original".
+  async function handleRemoveBackground() {
+    if (!form.logo_base64) return
+    setLogoBusy(true)
+    try {
+      const img = new Image()
+      await new Promise<void>((resolve, reject) => {
+        img.onload = () => resolve()
+        img.onerror = () => reject(new Error('No se pudo leer la imagen'))
+        img.src = form.logo_base64
+      })
+      const canvas = document.createElement('canvas')
+      canvas.width = img.naturalWidth
+      canvas.height = img.naturalHeight
+      const ctx = canvas.getContext('2d')
+      if (!ctx) throw new Error('Tu navegador no pudo procesar la imagen')
+      ctx.drawImage(img, 0, 0)
+      if (!removeFlatBackground(ctx, canvas.width, canvas.height)) {
+        setMsg('No encontré un fondo liso que quitar (o el logo ya es transparente).')
+        return
+      }
+      set('logo_base64', canvas.toDataURL('image/png'))
+      setMsg('Fondo quitado. Revisa que se vea bien; si no, usa "Restaurar original". Pulsa Guardar para aplicarlo.')
+    } catch (err: unknown) {
+      setMsg(err instanceof Error ? err.message : 'No se pudo quitar el fondo')
     } finally {
       setLogoBusy(false)
     }
@@ -320,6 +342,10 @@ function AgencySection({ initialClient, initialBrand }: { initialClient: Client 
                   <input type="file" accept="image/png,image/jpeg,image/webp" className="sr-only"
                     onChange={e => { handleLogoFile(e.target.files?.[0]); e.target.value = '' }} />
                 </label>
+                {form.logo_base64 && (
+                  <button type="button" disabled={logoBusy} className="text-sm text-gray-600 hover:underline disabled:opacity-50"
+                    onClick={handleRemoveBackground}>Quitar fondo</button>
+                )}
                 {logoOriginal && form.logo_base64 !== logoOriginal && (
                   <button type="button" className="text-sm text-gray-600 hover:underline"
                     onClick={() => { set('logo_base64', logoOriginal); setLogoOriginal(null); setMsg('Original restaurado. Pulsa Guardar para aplicarlo.') }}>Restaurar original</button>
@@ -329,7 +355,7 @@ function AgencySection({ initialClient, initialBrand }: { initialClient: Client 
                     onClick={() => { set('logo_base64', ''); setMsg('Logo quitado. Pulsa Guardar para aplicarlo.') }}>Quitar</button>
                 )}
               </div>
-              <p className="text-xs text-gray-500">O arrastra la imagen aquí. PNG, JPG o WebP. Se ajusta solo de tamaño y, si tiene un fondo liso, se lo quitamos. Lo ideal es un PNG con fondo transparente.</p>
+              <p className="text-xs text-gray-500">O arrastra la imagen aquí. PNG, JPG o WebP. Se ajusta solo de tamaño. Lo ideal es un PNG con fondo transparente. Si tu logo tiene un fondo liso, puedes probar Quitar fondo (no sirve si el logo tiene rellenos del mismo color del fondo).</p>
             </div>
           </div>
         </Field>
