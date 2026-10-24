@@ -30,9 +30,12 @@ export function parseIntroText(raw: string, bookingUrl: string | null): IntroPar
   const urlPart = bookingUrl ? `(?:${esc(bookingUrl)}|https?:\\/\\/(?:calendly\\.com|cal\\.com)\\S*)` : 'https?:\\/\\/(?:calendly\\.com|cal\\.com)\\S*'
   // "…30 minutos aquí: https://… — cada semana…" → "…30 minutos. Cada semana…" (el botón reemplaza al enlace)
   const urlRe = new RegExp(`\\s*(?:aquí|acá)?\\s*:?\\s*${urlPart}\\s*(?:[—–-]\\s*)?([a-záéíóúñ])?`, 'gi')
+  // "Puedes agendar aquí: https://…" → se quita la frase completa (el botón ya hace ese trabajo).
+  const askRe = new RegExp(`\\s*(?:Puedes\\s+)?(?:agendar|agenda|reservar|reserva)[^.!?:]{0,60}?(?:aquí|acá)?\\s*:?\\s*${urlPart}\\s*\\.?`, 'gi')
   const clean = (t: string) =>
     humanize(
-      t.replace(urlRe, (_m, ch?: string) => '. ' + (ch ? ch.toUpperCase() : ''))
+      t.replace(askRe, '. ')
+        .replace(urlRe, (_m, ch?: string) => '. ' + (ch ? ch.toUpperCase() : ''))
         .replace(/\.{2,}/g, '.')
         .replace(/\.\s*\./g, '.')
         .replace(/[ \t]{2,}/g, ' ')
