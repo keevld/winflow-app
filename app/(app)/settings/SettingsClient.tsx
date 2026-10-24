@@ -25,6 +25,65 @@ const TABS = [
 
 type TabKey = typeof TABS[number]['key']
 
+// Quita un fondo liso (blanco, negro o de color) conectado a los bordes de la imagen.
+// Devuelve true si lo quitó. No toca logos que ya tienen transparencia ni fondos con degradados o fotos.
+function removeFlatBackground(ctx: CanvasRenderingContext2D, w: number, h: number): boolean {
+  const img = ctx.getImageData(0, 0, w, h)
+  const d = img.data
+  const at = (x: number, y: number) => (y * w + x) * 4
+  // 1. Color de fondo = el color más común en el borde, y debe ser opaco.
+  const counts = new Map<string, { n: number; r: number; g: number; b: number }>()
+  let borderN = 0
+  const sample = (x: number, y: number) => {
+    const i = at(x, y)
+    borderN++
+    if (d[i + 3] < 200) return
+    const key = `${d[i] >> 4},${d[i + 1] >> 4},${d[i + 2] >> 4}`
+    const c = counts.get(key) ?? { n: 0, r: d[i], g: d[i + 1], b: d[i + 2] }
+    c.n++
+    counts.set(key, c)
+  }
+  for (let x = 0; x < w; x++) { sample(x, 0); sample(x, h - 1) }
+  for (let y = 1; y < h - 1; y++) { sample(0, y); sample(w - 1, y) }
+  let best: { n: number; r: number; g: number; b: number } | null = null
+  counts.forEach(c => { if (!best || c.n > best.n) best = c })
+  const bg = best as { n: number; r: number; g: number; b: number } | null
+  if (!bg || bg.n < borderN * 0.85) return false
+  const dist = (i: number) => Math.hypot(d[i] - bg.r, d[i + 1] - bg.g, d[i + 2] - bg.b)
+  const T0 = 28
+  const T1 = 70
+  // 2. Relleno desde los bordes: solo se quita lo conectado al exterior.
+  const seen = new Uint8Array(w * h)
+  const stack: number[] = []
+  const push = (x: number, y: number) => {
+    const k = y * w + x
+    if (seen[k]) return
+    if (d[at(x, y) + 3] > 0 && dist(at(x, y)) > T1) return
+    seen[k] = 1
+    stack.push(k)
+  }
+  for (let x = 0; x < w; x++) { push(x, 0); push(x, h - 1) }
+  for (let y = 0; y < h; y++) { push(0, y); push(w - 1, y) }
+  let removed = 0
+  while (stack.length) {
+    const k = stack.pop() as number
+    const x = k % w
+    const y = (k - x) / w
+    const i = k * 4
+    const dd = dist(i)
+    const a = dd <= T0 ? 0 : Math.round(((dd - T0) / (T1 - T0)) * 255)
+    d[i + 3] = Math.min(d[i + 3], a)
+    if (a < 255) removed++
+    if (x > 0) push(x - 1, y)
+    if (x < w - 1) push(x + 1, y)
+    if (y > 0) push(x, y - 1)
+    if (y < h - 1) push(x, y + 1)
+  }
+  if (removed < w * h * 0.05) return false
+  ctx.putImageData(img, 0, 0)
+  return true
+}
+
 export default function SettingsClient(props: Props) {
   const [tab, setTab] = useState<TabKey>('agency')
 
@@ -131,6 +190,7 @@ function AgencySection({ initialClient, initialBrand }: { initialClient: Client 
   const [saving, setSaving] = useState(false)
   const [msg, setMsg] = useState('')
   const [logoBusy, setLogoBusy] = useState(false)
+  const [logoOriginal, setLogoOriginal] = useState<string | null>(null)
   const [dragOver, setDragOver] = useState(false)
 
   function set<K extends keyof typeof form>(key: K, value: typeof form[K]) {
@@ -174,14 +234,23 @@ function AgencySection({ initialClient, initialBrand }: { initialClient: Client 
         setMsg('Esa imagen se ve vacía (es transparente). Sube el logo con su contenido visible.')
         return
       }
-      let out = canvas.toDataURL('image/png')
-      if (out.length > 440_000) out = canvas.toDataURL('image/webp', 0.9)
+      const encode = () => {
+        let o = canvas.toDataURL('image/png')
+        if (o.length > 440_000) o = canvas.toDataURL('image/webp', 0.9)
+        return o
+      }
+      const original = encode()
+      const stripped = removeFlatBackground(ctx, w, h)
+      const out = stripped ? canvas.toDataURL('image/png') : original
       if (out.length > 440_000) {
         setMsg('El logo sigue siendo muy pesado. Prueba con una versión más simple.')
         return
       }
       set('logo_base64', out)
-      setMsg('Logo cargado. Pulsa Guardar para aplicarlo.')
+      setLogoOriginal(stripped && original.length <= 440_000 ? original : null)
+      setMsg(stripped
+        ? 'Logo cargado y le quitamos el fondo automáticamente. Si se ve mal, usa "Restaurar original". Pulsa Guardar para aplicarlo.'
+        : 'Logo cargado. Pulsa Guardar para aplicarlo.')
     } catch (err: unknown) {
       setMsg(err instanceof Error ? err.message : 'No se pudo cargar el logo')
     } finally {
@@ -251,12 +320,16 @@ function AgencySection({ initialClient, initialBrand }: { initialClient: Client 
                   <input type="file" accept="image/png,image/jpeg,image/webp" className="sr-only"
                     onChange={e => { handleLogoFile(e.target.files?.[0]); e.target.value = '' }} />
                 </label>
+                {logoOriginal && form.logo_base64 !== logoOriginal && (
+                  <button type="button" className="text-sm text-gray-600 hover:underline"
+                    onClick={() => { set('logo_base64', logoOriginal); setLogoOriginal(null); setMsg('Original restaurado. Pulsa Guardar para aplicarlo.') }}>Restaurar original</button>
+                )}
                 {form.logo_base64 && (
                   <button type="button" className="text-sm text-red-600 hover:underline"
                     onClick={() => { set('logo_base64', ''); setMsg('Logo quitado. Pulsa Guardar para aplicarlo.') }}>Quitar</button>
                 )}
               </div>
-              <p className="text-xs text-gray-500">O arrastra la imagen aquí. PNG, JPG o WebP. Se ajusta solo de tamaño; mejor con fondo transparente.</p>
+              <p className="text-xs text-gray-500">O arrastra la imagen aquí. PNG, JPG o WebP. Se ajusta solo de tamaño y, si tiene un fondo liso, se lo quitamos. Lo ideal es un PNG con fondo transparente.</p>
             </div>
           </div>
         </Field>
