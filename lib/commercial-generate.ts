@@ -159,11 +159,12 @@ export async function generateCommercial(
     '12. Si hay fecha_deseada, el cronograma debe poder cumplirla contando desde fecha_hoy: paraleliza fases (por ejemplo producción mientras se selecciona a los perfiles) y ajusta duraciones. Si aun así no cabe, dilo con claridad en una condición ("terms") y en el cronograma; nunca prometas una fecha que tu propio cronograma contradice.',
     '13. Si hay presupuesto_mencionado, usa precio_referencia del catálogo para dimensionar los paquetes: al menos un paquete debe caber en ese presupuesto y el recomendado debe quedar cerca de él. Si recomiendas un paquete que lo supera, el resumen ejecutivo debe justificar en una frase por qué vale la pena. Recuerda que los honorarios de terceros (por ejemplo, de influencers) suelen ir aparte y debes decirlo.',
     '14. En <objeciones_conocidas> elige SOLO objeciones cuya respuesta esté redactada en voz de la agencia y responda de verdad la duda. Descarta respuestas que sean fragmentos, notas de una llamada o que hablen como el cliente. La pregunta que reformules debe corresponder exactamente a lo que la respuesta contesta. Si ninguna sirve, devuelve objection_ids vacío.',
-    '15. <condiciones_estandar> son las condiciones oficiales de la agencia y el sistema las agrega solas a la propuesta. En "terms" NO las repitas ni las contradigas; incluye solo condiciones adicionales específicas de esta propuesta que sí estén respaldadas por la llamada, o deja la lista vacía. No inventes anticipos, plazos de pago ni derechos de uso.',
+    '15. <condiciones_estandar> son las condiciones oficiales de la agencia y el sistema las agrega solas a la propuesta. En "terms" NO las repitas ni las contradigas; incluye solo condiciones adicionales específicas de esta propuesta que sí estén respaldadas por la llamada, o deja la lista vacía. No inventes anticipos, plazos de pago, derechos de uso ni plazos de aprobación (por ejemplo "48 horas"). No repitas la misma condición con otras palabras (por ejemplo, la de honorarios de terceros dicha una sola vez).',
     '16. Casos de éxito ("proof_stories", máximo 2): incluye SOLO casos realmente similares a lo que este prospecto necesita. relevancia "alta" = misma industria Y mismo tipo de trabajo (por ejemplo, restaurante que también quería una campaña con influencers). relevancia "media" = mismo tipo de trabajo en otra industria (por ejemplo, otra campaña con influencers). Un caso de la misma industria pero con un trabajo distinto NO sirve: no lo incluyas. Ordena de mayor a menor relevancia. Si ningún caso es similar en el tipo de trabajo, devuelve la lista vacía; es mejor no mostrar caso que mostrar uno que no aplica.',
     '17. Entregables: usa SOLO lo que el catálogo dice en "incluye" y respeta sus cantidades (por ejemplo, si un día de producción incluye 1 reel y 26 fotos, no escribas 3 videos). Si el prospecto pidió más de lo que incluye una unidad del servicio, no prometas más: explica que se cubre con más unidades de ese servicio (por ejemplo, otro día de producción) y deja que los paquetes lo reflejen. Nunca pongas cantidades "estimadas" que contradigan el catálogo.',
     '18. Coherencia con los paquetes: "solution", "deliverables" y "timeline" solo pueden describir servicios que aparezcan en al menos un paquete. Si un servicio no está en todos los paquetes, dilo explícitamente en el texto (por ejemplo, "incluido en Completo y Amplificado"). No describas un servicio que ningún paquete incluya ni pongas en el cronograma fases de servicios que el paquete más pequeño no tiene sin aclararlo.',
     '19. En "faq" no inventes plazos, procesos ni garantías de la agencia que no estén en <proceso_de_venta> o en el catálogo; si no tienes el dato, responde sin cifras.',
+    '20. Nombres de paquetes: ordénalos de menor a mayor precio y llámalos exactamente "Esencial" y "Completo" si son 2, o "Esencial", "Intermedio" y "Completo" si son 3. Cuando el texto ("solution", "deliverables", "timeline", "faq") mencione un paquete, usa SOLO esos nombres. Marca como recomendado el que mejor se ajuste al presupuesto y a lo que se habló.',
     'Responde ÚNICAMENTE con un objeto JSON válido, sin texto adicional ni bloques de código.',
   ].join('\n')
 
@@ -230,7 +231,7 @@ Devuelve este JSON exacto:
   "proof_stories": [{ "id": "id del caso", "relevancia": "alta|media", "motivo": "una frase: qué tiene en común con este prospecto" }],
   "objection_ids": ["id de 2 a 4 objeciones que este prospecto probablemente tendrá"],
   "objection_questions": [{ "id": "id de la objeción", "question": "La misma duda reformulada como pregunta neutral y respetuosa en segunda persona, p. ej. ¿Qué hace distinto a nuestro enfoque? (máx. 120 caracteres; no inventes datos)" }],
-  "packages": [{ "key": "basic|recommended|complete", "label": "Nombre", "recommended": false, "items": [{ "product_id": "id", "quantity": 1 }] }]
+  "packages": [{ "key": "basic|mid|complete", "label": "Esencial|Intermedio|Completo", "recommended": false, "items": [{ "product_id": "id", "quantity": 1 }] }]
 }
 ${mode === 'packages' ? '' : 'En este modo "packages" debe ir como lista vacía.'}
 `.trim()
@@ -331,6 +332,17 @@ ${mode === 'packages' ? '' : 'En este modo "packages" debe ir como lista vacía.
       .filter(p => p.lines.length > 0)
     if (valid.length >= 2) {
       usedPackages = true
+      // Orden por precio de referencia y nombres fijos, para que el texto y las opciones coincidan.
+      const unitOf = (id: string) => {
+        const r = priceRows.find(x => asNum(x.price_amount) !== null && asStr(x.product_id) === id)
+        return r ? (asNum(r.price_amount) ?? 0) : 0
+      }
+      const total = (p: { lines: { id: string; qty: number }[] }) => p.lines.reduce((a, l) => a + unitOf(l.id) * l.qty, 0)
+      const recFlag = valid.find(p => p.rec)
+      valid.sort((a, b) => total(a) - total(b))
+      const names = valid.length === 2 ? ['Esencial', 'Completo'] : ['Esencial', 'Intermedio', 'Completo']
+      valid.forEach((p, i) => { p.label = names[i] ?? p.label })
+      if (recFlag) { valid.forEach(p => { p.rec = p === recFlag }) }
       const recIdx = valid.findIndex(p => p.rec)
       valid.forEach((p, pi) => {
         p.lines.forEach((l, li) => {
@@ -343,6 +355,17 @@ ${mode === 'packages' ? '' : 'En este modo "packages" debe ir como lista vacía.
   }
   if (!usedPackages) {
     selected.forEach((id, i) => items.push(buildItem(id, 1, 'main', 'Inversión', false, i)))
+  }
+
+  // Aviso si el texto habla de un paquete que no existe con ese nombre
+  if (usedPackages) {
+    const labels = new Set(items.map(i => (i.option_label ?? '').toLowerCase()))
+    const textAll = [content.summary, content.situation, ...content.deliverables, ...content.solution.map(x => x.body), ...content.timeline.map(x => x.description), ...content.faq.map(x => x.a)].join(' ')
+    const bad = new Set<string>()
+    for (const m of textAll.matchAll(/paquetes?\s+(?:"|“)?([A-ZÁÉÍÓÚÑ][a-záéíóúñ]+)/g)) {
+      if (!labels.has(m[1].toLowerCase())) bad.add(m[1])
+    }
+    if (bad.size) warnings.push(`El texto menciona paquetes que no existen: ${[...bad].join(', ')}. Revísalo antes de enviar.`)
   }
 
   // Casos de éxito y objeciones: textos reales aprobados por la agencia
