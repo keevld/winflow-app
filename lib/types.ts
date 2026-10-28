@@ -23,6 +23,7 @@ export interface Proposal {
   prospect_pain: string | null
   product: string | null
   proposal_text: string | null
+  market_sources?: { title: string; url: string; quote: string }[] | null
   email_html: string | null
   pdf_url: string | null
   status: ProposalStatus

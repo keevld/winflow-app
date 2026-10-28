@@ -50,9 +50,8 @@ export function extractJson(text: string): unknown {
 }
 
 export async function callClaude(system: string, user: string): Promise<string> {
-  // Acepta WINFLOW_ANTHROPIC_KEY como alternativa por si ANTHROPIC_API_KEY no llega al servidor.
-  const key = process.env.ANTHROPIC_API_KEY || process.env.WINFLOW_ANTHROPIC_KEY
-  if (!key) throw new Error('La clave de Anthropic no está configurada en el servidor (ANTHROPIC_API_KEY o WINFLOW_ANTHROPIC_KEY)')
+  const key = process.env.ANTHROPIC_API_KEY
+  if (!key) throw new Error('La clave de Anthropic no está configurada en el servidor (ANTHROPIC_API_KEY)')
   const res = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: {
@@ -165,6 +164,7 @@ export async function generateCommercial(
     '18. Coherencia con los paquetes: "solution", "deliverables" y "timeline" solo pueden describir servicios que aparezcan en al menos un paquete. Si un servicio no está en todos los paquetes, dilo explícitamente en el texto (por ejemplo, "incluido en Completo y Amplificado"). No describas un servicio que ningún paquete incluya ni pongas en el cronograma fases de servicios que el paquete más pequeño no tiene sin aclararlo.',
     '19. En "faq" no inventes plazos, procesos ni garantías de la agencia que no estén en <proceso_de_venta> o en el catálogo; si no tienes el dato, responde sin cifras.',
     '20. Nombres de paquetes: ordénalos de menor a mayor precio y llámalos exactamente "Esencial" y "Completo" si son 2, o "Esencial", "Intermedio" y "Completo" si son 3. Cuando el texto ("solution", "deliverables", "timeline", "faq") mencione un paquete, usa SOLO esos nombres. Marca como recomendado el que mejor se ajuste al presupuesto y a lo que se habló.',
+    '21. Fechas: NO escribas fechas de calendario inventadas (por ejemplo "semana del 27 de octubre", "28 de noviembre") ni en el cronograma, ni en los siguientes pasos, ni en las condiciones. Solo puedes citar la fecha_deseada tal como la dio el prospecto. El cronograma se expresa en "Semana 1", "Semana 2", etc. No condiciones el cumplimiento de la fecha a que el contrato se firme en un día concreto.',
     'Responde ÚNICAMENTE con un objeto JSON válido, sin texto adicional ni bloques de código.',
   ].join('\n')
 
@@ -259,6 +259,11 @@ ${mode === 'packages' ? '' : 'En este modo "packages" debe ir como lista vacía.
       for (const m of t.matchAll(/(\d+)(?:\s*(?:a|-|y)\s*(\d+))?\s*(semanas?|d[ií]as|horas|meses|rondas|revisiones)/gi)) {
         const phrase = m[0].toLowerCase().replace(/\s+/g, ' ')
         if (!support.includes(phrase)) flagged.add(m[0])
+      }
+    }
+    for (const t of [...texts, ...content.next_steps, ...content.timeline.flatMap(x => [x.phase, x.description])]) {
+      for (const m of t.matchAll(/\d{1,2}\s+de\s+(?:enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|octubre|noviembre|diciembre)/gi)) {
+        if (!support.includes(m[0].toLowerCase())) flagged.add(m[0])
       }
     }
     if (flagged.size) {

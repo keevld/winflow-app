@@ -396,6 +396,26 @@ export default function ProposalPage() {
             )}
           </div>
 
+          {/* Datos de mercado usados (solo para la agencia) */}
+          {proposal.market_sources && proposal.market_sources.length > 0 && (
+            <details className="bg-white rounded-xl border border-gray-200 px-6 py-4 text-sm">
+              <summary className="cursor-pointer text-gray-600">
+                Datos de mercado usados ({proposal.market_sources.length}) · revisa que te convenzan antes de enviar
+              </summary>
+              <ul className="mt-3 space-y-2">
+                {proposal.market_sources.map((s, i) => (
+                  <li key={i} className="text-xs text-gray-600">
+                    <a href={s.url} target="_blank" rel="noopener noreferrer" className="font-medium text-gray-800 underline">
+                      {s.title || s.url}
+                    </a>
+                    {s.quote && <span className="block text-gray-500 mt-0.5">&ldquo;{s.quote}&rdquo;</span>}
+                  </li>
+                ))}
+              </ul>
+              <p className="mt-3 text-xs text-gray-400">Esto no aparece en la propuesta del prospecto.</p>
+            </details>
+          )}
+
           {/* Email HTML editor */}
           <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-3">
             <div className="flex items-center justify-between">
