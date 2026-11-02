@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest, NextResponse, after } from 'next/server'
 import { nanoid } from 'nanoid'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { generateCommercial } from '@/lib/commercial-generate'
@@ -115,42 +115,46 @@ export async function POST(req: NextRequest) {
   }
   const id = created.id as string
 
-  try {
-    const result = await generateCommercial(service, {
-      clientId,
-      proposal: fields,
-      mode,
-      selectedProductIds: productIds,
-    })
-
-    if (result.items.length) {
-      const { error: itemsErr } = await service.from('proposal_price_items').insert(
-        result.items.map(it => ({ ...it, proposal_id: id, client_id: clientId }))
-      )
-      if (itemsErr) throw new Error('No se pudieron guardar las partidas de precio')
-    }
-
-    const productNames = result.items.map(i => i.description)
-    await service
-      .from('proposals')
-      .update({
-        status: 'ready',
-        commercial: result.content,
-        product: Array.from(new Set(productNames)).slice(0, 3).join(', ') || null,
-        generated_at: new Date().toISOString(),
-        failure_reason: null,
+  // La generación (20-90 s) sigue en segundo plano: la petición responde al instante y la
+  // página de la propuesta consulta el estado cada 4 s. Así un corte de conexión no la interrumpe.
+  after(async () => {
+    try {
+      const result = await generateCommercial(service, {
+        clientId,
+        proposal: fields,
+        mode,
+        selectedProductIds: productIds,
       })
-      .eq('id', id)
-      .eq('client_id', clientId)
 
-    return NextResponse.json({ ok: true, id, warnings: result.warnings })
-  } catch (err) {
-    const reason = err instanceof Error ? err.message.slice(0, 300) : 'Error desconocido'
-    await service
-      .from('proposals')
-      .update({ status: 'failed', failure_reason: reason })
-      .eq('id', id)
-      .eq('client_id', clientId)
-    return NextResponse.json({ error: reason, id }, { status: 502 })
-  }
+      if (result.items.length) {
+        const { error: itemsErr } = await service.from('proposal_price_items').insert(
+          result.items.map(it => ({ ...it, proposal_id: id, client_id: clientId }))
+        )
+        if (itemsErr) throw new Error('No se pudieron guardar las partidas de precio')
+      }
+
+      const productNames = result.items.map(i => i.description)
+      await service
+        .from('proposals')
+        .update({
+          status: 'ready',
+          commercial: result.content,
+          generation_warnings: result.warnings.length ? result.warnings : null,
+          product: Array.from(new Set(productNames)).slice(0, 3).join(', ') || null,
+          generated_at: new Date().toISOString(),
+          failure_reason: null,
+        })
+        .eq('id', id)
+        .eq('client_id', clientId)
+    } catch (err) {
+      const reason = err instanceof Error ? err.message.slice(0, 300) : 'Error desconocido'
+      await service
+        .from('proposals')
+        .update({ status: 'failed', failure_reason: reason })
+        .eq('id', id)
+        .eq('client_id', clientId)
+    }
+  })
+
+  return NextResponse.json({ ok: true, id })
 }

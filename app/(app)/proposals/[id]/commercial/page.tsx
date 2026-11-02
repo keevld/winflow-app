@@ -199,6 +199,19 @@ export default function CommercialEditorPage() {
 
   if (!proposal) return <div className="text-sm text-gray-400 py-20 text-center">Cargando...</div>
 
+  const stuck = proposal.status === 'generating' && !!proposal.generation_started_at &&
+    Date.now() - new Date(proposal.generation_started_at).getTime() > 4 * 60 * 1000
+  if (stuck) {
+    return (
+      <div className="bg-red-50 border border-red-200 rounded-xl p-6 max-w-2xl">
+        <p className="text-sm text-red-700 font-medium">La generación tardó demasiado</p>
+        <p className="text-xs text-red-500 mt-1">Tus datos no se pierden: vuelve a intentarlo.</p>
+        <Link href={`/proposals/commercial/new${proposal.parent_proposal_id ? `?from=${proposal.parent_proposal_id}` : ''}`}
+          className="inline-block mt-4 text-sm px-4 py-2 rounded-lg bg-gray-900 text-white">Intentar de nuevo</Link>
+      </div>
+    )
+  }
+
   if (proposal.status === 'generating') {
     return (
       <div className="bg-white rounded-xl border border-gray-200 p-8 text-center max-w-2xl">
@@ -247,6 +260,15 @@ export default function CommercialEditorPage() {
           </p>
           {proposal.accepted_option && <p>Opción elegida: {options.find(o => o.key === proposal.accepted_option)?.label ?? proposal.accepted_option}</p>}
           {proposal.accepted_comment && <p>Comentario: “{proposal.accepted_comment}”</p>}
+        </div>
+      )}
+
+      {!isSent && proposal.generation_warnings && proposal.generation_warnings.length > 0 && (
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-sm text-amber-900 space-y-1">
+          <p className="font-semibold">Revisa esto antes de enviar</p>
+          <ul className="list-disc pl-5 text-xs space-y-0.5">
+            {proposal.generation_warnings.map((w, i) => <li key={i}>{w}</li>)}
+          </ul>
         </div>
       )}
 

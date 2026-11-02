@@ -24,6 +24,8 @@ export interface Proposal {
   product: string | null
   proposal_text: string | null
   market_sources?: { title: string; url: string; quote: string }[] | null
+  generation_warnings?: string[] | null
+  generation_started_at?: string | null
   email_html: string | null
   pdf_url: string | null
   status: ProposalStatus
