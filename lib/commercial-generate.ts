@@ -205,7 +205,7 @@ ${JSON.stringify(catalogForPrompt)}
 ${JSON.stringify(pains.data ?? [])}
 </dolores_tipicos_de_clientes>
 <casos_de_exito_disponibles>
-${JSON.stringify(storyRows.map(s => ({ id: s.id, empresa: s.company_example, industria: s.relevant_for_industry, que_se_hizo: s.solution })))}
+${JSON.stringify(storyRows.map(s => ({ id: s.id, empresa: s.company_example, industria: s.relevant_for_industry, problema: s.problem, que_se_hizo: s.solution })))}
 </casos_de_exito_disponibles>
 <objeciones_conocidas>
 ${JSON.stringify(objectionRows.map(o => ({ id: o.id, objecion: o.objection, respuesta_de_la_agencia: o.response })))}
