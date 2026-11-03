@@ -32,7 +32,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
   ])
 
   const hash = createHash('sha1')
-    .update(JSON.stringify([p.commercial, p.proposal_text, p.valid_until, items, brand, agency, 'v2']))
+    .update(JSON.stringify([p.commercial, p.proposal_text, p.valid_until, items, brand, agency, 'v3']))
     .digest('hex')
     .slice(0, 16)
   const path = `commercial-pdf/${p.id}/${hash}.pdf`

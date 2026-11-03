@@ -61,7 +61,11 @@ function Checks({ list, two }: { list: string[]; two?: boolean }) {
   return <ul className={`pd-check-list${two && list.length > 4 ? ' pd-two' : ''}`}>{list.map((x, i) => <li key={i}>{x}</li>)}</ul>
 }
 
-function Lines({ items }: { items: PriceItem[] }) {
+// En paquetes lado a lado la descripción larga del catálogo se repetiría en cada columna y ya está
+// explicada en «Nuestra propuesta» y «Entregables»: ahí solo se muestran notas cortas.
+const SHORT_NOTE = 90
+
+function Lines({ items, compact }: { items: PriceItem[]; compact?: boolean }) {
   return (
     <div className="pd-lines">
       {items.map((it, i) => {
@@ -73,7 +77,7 @@ function Lines({ items }: { items: PriceItem[] }) {
               {it.description}
               {it.discount_pct > 0 && <span className="pd-line-disc"> −{it.discount_pct}%</span>}
               {sub && <span className="pd-line-sub">{sub}</span>}
-              {it.notes && <span className="pd-line-sub">{it.notes}</span>}
+              {it.notes && (!compact || it.notes.length <= SHORT_NOTE) && <span className="pd-line-sub">{it.notes}</span>}
             </span>
             <span className="pd-line-amt">{t === null ? 'Por definir' : money(t, it.currency)}</span>
           </div>
@@ -221,7 +225,7 @@ export default function CommercialDocument(p: CommercialDocumentProps) {
                     {o.recommended && <span className="pd-pkg-badge">Recomendada</span>}
                     <h3>{o.label}</h3>
                     <p className="pd-price">{totalsText(o.totals)}</p>
-                    <Lines items={o.items} />
+                    <Lines items={o.items} compact />
                     {selectable && <PickButton optionKey={o.key} />}
                   </div>
                 ))}

@@ -427,10 +427,10 @@
   .pd-bar, .pd-preview, .pd-accept-wrap, .pd-call, .pd-noprint { display: none !important; }
   .pd-main { max-width: none; padding: 0 16mm; }
   .pd-lead { padding-top: 0; font-size: 19pt; }
-  .pd-section { break-inside: avoid; padding-block: 16pt; gap: 10pt 28pt; }
-  .pd-section--long { break-inside: auto; }
+  /* Las secciones fluyen entre páginas (sin huecos grandes); lo que no se parte son los ítems. */
+  .pd-section { break-inside: auto; padding-block: 14pt; gap: 10pt 28pt; }
   .pd-section:first-of-type { margin-top: 12pt; }
-  .pd-pkg, .pd-case, .pd-phase { break-inside: avoid; }
+  .pd-pkg, .pd-case, .pd-phase, .pd-check-list li, .pd-terms li { break-inside: avoid; }
   .pd-pkg--rec { border: 2px solid var(--brand); }
   .pd-section h2 { break-after: avoid; }
   .pd-solution > div, .pd-faq > div, .pd-steps li, .pd-letter > *, .pd-metric, .pd-closing { break-inside: avoid; }
@@ -439,14 +439,17 @@
   .pd-section { display: block; }
   .pd-section h2 { margin-bottom: 8pt; }
   .pd-foot { display: none; }
-  /* La inversión abre página propia: así los paquetes nunca se parten entre dos hojas. */
-  #inversion { break-before: page; break-inside: avoid; padding-top: 0; border-top: 0; }
+  /* Los paquetes nunca se parten: si no caben en lo que queda de hoja, la sección pasa entera a la siguiente. */
+  #inversion { break-inside: avoid; }
   .pd-packages { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10pt; }
   .pd-packages > *, .pd-case-grid > *, .pd-metrics > * { min-width: 0; }
   .pd-pkg h3, .pd-line { overflow-wrap: anywhere; }
   .pd-pkg { padding: 16pt 12pt; }
   .pd-price { font-size: 17pt; }
-  .pd-line { font-size: 9pt; }
+  /* Columnas angostas: el monto va debajo del nombre en lugar de apretarlo a su lado. */
+  .pd-line { font-size: 9pt; flex-direction: column; gap: 1pt; padding: 7pt 0; }
+  .pd-line-amt { white-space: normal; }
+  .pd-table .pd-line { flex-direction: row; font-size: 10pt; }
   .pd-pkg, .pd-table { box-shadow: none; }
   .pd-cover-body > *, .pd-meta, .pd-brandmark { animation: none; }
 }
