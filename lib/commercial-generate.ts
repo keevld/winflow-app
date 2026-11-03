@@ -42,6 +42,11 @@ const asNum = (v: unknown): number | null => {
 }
 const asStr = (v: unknown): string => (typeof v === 'string' ? v : '')
 
+// Texto de respaldo para las revisiones: sin ids ni fechas de registro, cuyos dígitos
+// ("2026-10-25", uuids) harían pasar como respaldadas cifras como 25 o 40.
+const supportText = (v: unknown): string =>
+  JSON.stringify(v, (k, val) => (k === 'id' || k.endsWith('_id') || k === 'created_at' || k === 'updated_at' ? undefined : val)).toLowerCase()
+
 export function extractJson(text: string): unknown {
   const start = text.indexOf('{')
   const end = text.lastIndexOf('}')
@@ -200,7 +205,7 @@ ${JSON.stringify(catalogForPrompt)}
 ${JSON.stringify(pains.data ?? [])}
 </dolores_tipicos_de_clientes>
 <casos_de_exito_disponibles>
-${JSON.stringify(storyRows.map(s => ({ id: s.id, empresa: s.company_example, industria: s.relevant_for_industry, problema: s.problem, que_se_hizo: s.solution })))}
+${JSON.stringify(storyRows.map(s => ({ id: s.id, empresa: s.company_example, industria: s.relevant_for_industry, que_se_hizo: s.solution })))}
 </casos_de_exito_disponibles>
 <objeciones_conocidas>
 ${JSON.stringify(objectionRows.map(o => ({ id: o.id, objecion: o.objection, respuesta_de_la_agencia: o.response })))}
@@ -242,9 +247,9 @@ ${mode === 'packages' ? '' : 'En este modo "packages" debe ir como lista vacía.
 
   // ── Revisión de respaldo: cifras y plazos que no salen de ninguna fuente de la agencia ──
   {
-    const support = JSON.stringify([
+    const support = supportText([
       catalogForPrompt, proposal, storyRows, objectionRows, process.data, brand.data, standardTerms,
-    ]).toLowerCase()
+    ])
     const supportDigits = new Set((support.match(/\d[\d.,]*\d|\d/g) ?? []).map(n => n.replace(/[.,]/g, '')))
     const texts: string[] = [
       content.summary, content.situation, ...content.objectives, ...content.deliverables, ...content.terms,
@@ -269,9 +274,9 @@ ${mode === 'packages' ? '' : 'En este modo "packages" debe ir como lista vacía.
     }
     // Cifras en el texto sobre el prospecto que solo existen en un caso de éxito: probable mezcla de datos.
     {
-      const prospectSupport = JSON.stringify([
+      const prospectSupport = supportText([
         catalogForPrompt, proposal, objectionRows, process.data, brand.data, standardTerms,
-      ]).toLowerCase()
+      ])
       const prospectDigits = new Set((prospectSupport.match(/\d[\d.,]*\d|\d/g) ?? []).map(n => n.replace(/[.,]/g, '')))
       const mixed = new Set<string>()
       for (const t of [content.summary, content.situation, ...content.objectives]) {
