@@ -165,6 +165,7 @@ export async function generateCommercial(
     '19. En "faq" no inventes plazos, procesos ni garantías de la agencia que no estén en <proceso_de_venta> o en el catálogo; si no tienes el dato, responde sin cifras.',
     '20. Nombres de paquetes: ordénalos de menor a mayor precio y llámalos exactamente "Esencial" y "Completo" si son 2, o "Esencial", "Intermedio" y "Completo" si son 3. Cuando el texto ("solution", "deliverables", "timeline", "faq") mencione un paquete, usa SOLO esos nombres. Marca como recomendado el que mejor se ajuste al presupuesto y a lo que se habló.',
     '21. Fechas: NO escribas fechas de calendario inventadas (por ejemplo "semana del 27 de octubre", "28 de noviembre") ni en el cronograma, ni en los siguientes pasos, ni en las condiciones. Solo puedes citar la fecha_deseada tal como la dio el prospecto. El cronograma se expresa en "Semana 1", "Semana 2", etc. No condiciones el cumplimiento de la fecha a que el contrato se firme en un día concreto.',
+    '22. Los casos de éxito son de OTRAS empresas. NUNCA le atribuyas al prospecto datos que solo aparecen en un caso (su público objetivo, edades, ciudades o mercados, qué materiales o contenido tiene, su tamaño o sus canales). Sobre el prospecto afirma únicamente lo que esté en <notas_llamada> y <datos_prospecto>; si falta un dato, no lo supongas. Usa los casos solo para contar qué se hizo y qué resultado tuvo en ese caso.',
     'Responde ÚNICAMENTE con un objeto JSON válido, sin texto adicional ni bloques de código.',
   ].join('\n')
 
@@ -264,6 +265,22 @@ ${mode === 'packages' ? '' : 'En este modo "packages" debe ir como lista vacía.
     for (const t of [...texts, ...content.next_steps, ...content.timeline.flatMap(x => [x.phase, x.description])]) {
       for (const m of t.matchAll(/\d{1,2}\s+de\s+(?:enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|octubre|noviembre|diciembre)/gi)) {
         if (!support.includes(m[0].toLowerCase())) flagged.add(m[0])
+      }
+    }
+    // Cifras en el texto sobre el prospecto que solo existen en un caso de éxito: probable mezcla de datos.
+    {
+      const prospectSupport = JSON.stringify([
+        catalogForPrompt, proposal, objectionRows, process.data, brand.data, standardTerms,
+      ]).toLowerCase()
+      const prospectDigits = new Set((prospectSupport.match(/\d[\d.,]*\d|\d/g) ?? []).map(n => n.replace(/[.,]/g, '')))
+      const mixed = new Set<string>()
+      for (const t of [content.summary, content.situation, ...content.objectives]) {
+        for (const m of t.matchAll(/\d[\d.,]*\d/g)) {
+          if (!prospectDigits.has(m[0].replace(/[.,]/g, ''))) mixed.add(m[0])
+        }
+      }
+      if (mixed.size) {
+        warnings.push(`El resumen, la situación o los objetivos mencionan cifras que no salen de tus notas ni de los datos del prospecto, y podrían venir de un caso de éxito (${[...mixed].slice(0, 6).join(', ')}). Confirma que sí aplican a este prospecto.`)
       }
     }
     if (flagged.size) {
