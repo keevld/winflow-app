@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/server'
+import { rateLimit, clientIp, tooMany } from '@/lib/rate-limit'
 
 // Public endpoint — no auth. Called from the prospect-facing /p/[slug] page
 // (which has no logged-in user) to record engagement signals: a 'view' when
@@ -11,6 +12,10 @@ export async function POST(
   { params }: { params: Promise<{ slug: string }> }
 ) {
   const { slug } = await params
+  // Contra relleno de vistas y eventos falsos: tope por IP y propuesta (se responde OK sin registrar).
+  if (!(await rateLimit(await createServiceClient(), `track:${clientIp(req)}:${slug}`, 40, 3600))) {
+    return NextResponse.json({ ok: true })
+  }
 
   let body: { event_type?: string; duration_seconds?: number }
   try {
@@ -58,14 +63,7 @@ export async function POST(
   })
 
   if (eventType === 'view') {
-    await service
-      .from('proposals')
-      .update({
-        opened_at: proposal.opened_at ?? new Date().toISOString(),
-        last_viewed_at: new Date().toISOString(),
-        view_count: (proposal.view_count ?? 0) + 1,
-      })
-      .eq('id', proposal.id)
+    await service.rpc('record_proposal_view', { p_proposal_id: proposal.id })
   } else {
     await service
       .from('proposals')

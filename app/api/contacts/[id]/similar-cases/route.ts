@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireMemberContext, isMemberContext } from '@/lib/api-auth'
 import { callClaude, extractJson } from '@/lib/commercial-generate'
+import { rateLimit, clientIp, tooMany } from '@/lib/rate-limit'
 
 export const maxDuration = 60
 
@@ -12,6 +13,7 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
   const ctx = await requireMemberContext()
   if (!isMemberContext(ctx)) return ctx.error
   const { clientId, service } = ctx
+  if (!(await rateLimit(service, `sim:${clientId}`, 60, 3600))) return tooMany()
 
   const { data: contact } = await service
     .from('contacts')

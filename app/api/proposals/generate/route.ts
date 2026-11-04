@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
+import { rateLimit, clientIp, tooMany } from '@/lib/rate-limit'
 
 export async function POST(req: NextRequest) {
   // ── 1. Auth ───────────────────────────────────────────────
@@ -17,6 +18,9 @@ export async function POST(req: NextRequest) {
   if (!profile?.client_id) {
     return NextResponse.json({ error: 'No agency assigned to this user' }, { status: 403 })
   }
+
+  // Límite de uso por usuario: cada generación gasta IA.
+  if (!(await rateLimit(await createServiceClient(), `gen:${user.id}`, 30, 3600))) return tooMany()
 
   // ── 3. Body ───────────────────────────────────────────────
   let body: Record<string, unknown>

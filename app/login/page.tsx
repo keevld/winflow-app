@@ -19,11 +19,13 @@ export default function LoginPage() {
       email,
       // PKCE login is completed by the server callback, which exchanges the
       // one-time code for a cookie-backed session before redirecting onward.
-      options: { emailRedirectTo: `${location.origin}/auth/callback?next=/dashboard` },
+      // Solo entran usuarios dados de alta por la plataforma (piloto por invitación): no se crean cuentas desde aquí.
+      options: { emailRedirectTo: `${location.origin}/auth/callback?next=/dashboard`, shouldCreateUser: false },
     })
 
     if (error) {
-      setError(error.message)
+      const noAccess = /signups? not allowed|user not found/i.test(error.message)
+      setError(noAccess ? 'Este correo aún no tiene acceso. Winflow está en piloto por invitación.' : error.message)
       setLoading(false)
     } else {
       setSent(true)

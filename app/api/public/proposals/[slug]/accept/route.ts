@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/server'
+import { rateLimit, clientIp, tooMany } from '@/lib/rate-limit'
 
 // Público (sin login): el prospecto acepta la propuesta comercial.
 // Acceso protegido por el slug no adivinable, igual que /p/[slug].
@@ -8,6 +9,7 @@ export async function POST(
   { params }: { params: Promise<{ slug: string }> }
 ) {
   const { slug } = await params
+  if (!(await rateLimit(await createServiceClient(), `accept:${clientIp(req)}`, 10, 3600))) return tooMany()
 
   let body: { name?: unknown; option?: unknown; comment?: unknown }
   try {

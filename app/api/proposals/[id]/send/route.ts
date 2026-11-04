@@ -3,6 +3,7 @@ import { sanitizeEmailHtml, injectViewLink } from '@/lib/text'
 import { sanitizeContent } from '@/lib/commercial'
 import { onColor } from '@/lib/color'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
+import { rateLimit, clientIp, tooMany } from '@/lib/rate-limit'
 
 export const maxDuration = 60
 
@@ -27,6 +28,7 @@ export async function POST(
   if (!profile?.client_id) {
     return NextResponse.json({ error: 'No agency assigned to this user' }, { status: 403 })
   }
+  if (!(await rateLimit(await createServiceClient(), `send:${user.id}`, 40, 3600))) return tooMany()
 
   // ── 3. Proposal — load with anon client (RLS pre-filters) ─
   const { data: proposal } = await supabase

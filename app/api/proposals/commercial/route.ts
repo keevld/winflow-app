@@ -2,6 +2,7 @@ import { NextRequest, NextResponse, after } from 'next/server'
 import { nanoid } from 'nanoid'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { generateCommercial } from '@/lib/commercial-generate'
+import { rateLimit, clientIp, tooMany } from '@/lib/rate-limit'
 import { capitalizeFirst, titleCase } from '@/lib/text'
 import type { PricingMode } from '@/lib/commercial'
 
@@ -27,6 +28,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'No agency assigned to this user' }, { status: 403 })
   }
   const clientId = profile.client_id as string
+  if (!(await rateLimit(await createServiceClient(), `com:${user.id}`, 20, 3600))) return tooMany()
 
   let body: Record<string, unknown>
   try {

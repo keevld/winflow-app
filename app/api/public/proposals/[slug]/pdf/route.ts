@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createHash } from 'node:crypto'
 import { createServiceClient } from '@/lib/supabase/server'
+import { rateLimit, clientIp, tooMany } from '@/lib/rate-limit'
 
 export const maxDuration = 60
 
@@ -12,6 +13,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
   const apiKey = process.env.PDFSHIFT_API_KEY
   if (!apiKey) return NextResponse.json({ error: 'PDF no configurado' }, { status: 501 })
   if (!/^[A-Za-z0-9_-]{6,80}$/.test(slug)) return NextResponse.json({ error: 'No encontrada' }, { status: 404 })
+  if (!(await rateLimit(await createServiceClient(), `pdf:${clientIp(req)}`, 30, 3600))) return tooMany()
 
   const sb = await createServiceClient()
   const { data: p } = await sb
