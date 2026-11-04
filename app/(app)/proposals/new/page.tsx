@@ -154,9 +154,14 @@ export default function NewProposalPage() {
                 onChange={e => set('prospect_email', e.target.value)} placeholder="ana@empresa.com" />
             </div>
             <div>
-              <label className={labelClass}>Sitio web <span className="text-gray-400 font-normal">· recomendado</span></label>
+              <label className={labelClass}>Sitio web <span className="text-amber-600 font-medium">· muy recomendado</span></label>
               <input type="url" className={inputClass} value={form.prospect_website}
                 onChange={e => set('prospect_website', e.target.value)} placeholder="https://empresa.com" />
+              {!form.prospect_website.trim() && (
+                <p className="mt-1.5 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-md px-2.5 py-1.5">
+                  Altamente recomendable para una propuesta más precisa: con el sitio web la adaptamos a su negocio. Sin él, solo nos apoyamos en tus notas.
+                </p>
+              )}
             </div>
           </div>
 
