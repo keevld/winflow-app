@@ -5,6 +5,7 @@ import {
   type PriceItem,
   type PricingMode,
 } from '@/lib/commercial'
+import { caseAlias, makeScrubber, scrubJson } from '@/lib/confidentiality'
 
 // Genera el contenido de una propuesta comercial.
 // Regla de oro: la IA redacta y elige qué servicios incluir, pero los PRECIOS,
@@ -109,10 +110,21 @@ export async function generateCommercial(
   // Nunca mostrarle al prospecto un "caso de éxito" con su propio nombre.
   const norm = (t: string) => t.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]/g, '')
   const prospectKey = norm(proposal.prospect_company ?? '')
-  const storyRows = ((stories.data ?? []) as Row[]).filter(st => {
-    const k = norm(asStr(st.company_example))
-    return !(prospectKey && k && (k === prospectKey || k.includes(prospectKey) || prospectKey.includes(k)))
-  })
+  // Confidencialidad: los clientes de la agencia no se nombran. La IA solo ve un alias («Cliente de
+  // retail») y los textos de los casos salen sin el nombre; además se limpia lo que genere (abajo).
+  const scrubClients = makeScrubber(((stories.data ?? []) as Row[]).map(st => asStr(st.company_example)))
+  const storyRows = ((stories.data ?? []) as Row[])
+    .filter(st => {
+      const k = norm(asStr(st.company_example))
+      return !(prospectKey && k && (k === prospectKey || k.includes(prospectKey) || prospectKey.includes(k)))
+    })
+    .map((st): Row => ({
+      ...st,
+      company_example: caseAlias(asStr(st.relevant_for_industry)),
+      problem: scrubClients(asStr(st.problem)),
+      solution: scrubClients(asStr(st.solution)),
+      result: scrubClients(asStr(st.result)),
+    }))
   const objectionRows = (objections.data ?? []) as Row[]
   const standardTerms = asStr((brand.data as Row | null)?.standard_terms)
     .split('\n').map(l => l.trim()).filter(Boolean).slice(0, 10)
@@ -171,6 +183,7 @@ export async function generateCommercial(
     '20. Nombres de paquetes: ordénalos de menor a mayor precio y llámalos exactamente "Esencial" y "Completo" si son 2, o "Esencial", "Intermedio" y "Completo" si son 3. Cuando el texto ("solution", "deliverables", "timeline", "faq") mencione un paquete, usa SOLO esos nombres. Marca como recomendado el que mejor se ajuste al presupuesto y a lo que se habló.',
     '21. Fechas: NO escribas fechas de calendario inventadas (por ejemplo "semana del 27 de octubre", "28 de noviembre") ni en el cronograma, ni en los siguientes pasos, ni en las condiciones. Solo puedes citar la fecha_deseada tal como la dio el prospecto. El cronograma se expresa en "Semana 1", "Semana 2", etc. No condiciones el cumplimiento de la fecha a que el contrato se firme en un día concreto.',
     '22. Los casos de éxito son de OTRAS empresas. NUNCA le atribuyas al prospecto datos que solo aparecen en un caso (su público objetivo, edades, ciudades o mercados, qué materiales o contenido tiene, su tamaño o sus canales). Sobre el prospecto afirma únicamente lo que esté en <notas_llamada> y <datos_prospecto>; si falta un dato, no lo supongas. Usa los casos solo para contar qué se hizo y qué resultado tuvo en ese caso.',
+    '23. CONFIDENCIALIDAD: nunca nombres a otros clientes o marcas con las que haya trabajado la agencia (ni los de los casos ni los de <sobre_la_agencia>). Si necesitas referirte a un caso, di «un cliente» o «una marca de [su sector]», sin dar el nombre.',
     'Responde ÚNICAMENTE con un objeto JSON válido, sin texto adicional ni bloques de código.',
   ].join('\n')
 
@@ -182,7 +195,7 @@ export async function generateCommercial(
 
   const user = `
 <agencia>
-${JSON.stringify({ nombre: client.data?.company_name, industria: client.data?.industry, sitio: client.data?.website, sobre_la_agencia: (brand.data as Row | null)?.about_agency ?? null })}
+${JSON.stringify({ nombre: client.data?.company_name, industria: client.data?.industry, sitio: client.data?.website, sobre_la_agencia: scrubClients(asStr((brand.data as Row | null)?.about_agency)) || null })}
 </agencia>
 <voz_de_marca>
 ${JSON.stringify(brand.data ?? {})}
@@ -243,7 +256,7 @@ ${mode === 'packages' ? '' : 'En este modo "packages" debe ir como lista vacía.
 `.trim()
 
   const raw = extractJson(await callClaude(system, user)) as Row
-  const content = sanitizeContent(raw.content)
+  const content = scrubJson(sanitizeContent(raw.content), scrubClients)
 
   // ── Revisión de respaldo: cifras y plazos que no salen de ninguna fuente de la agencia ──
   {
