@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import WebsiteAutofill from './WebsiteAutofill'
 import type {
   Client, BrandVoice, SalesProcess, Product, Pricing, PainPoint, SuccessStory, Objection,
 } from '@/lib/types'
@@ -108,16 +109,17 @@ export default function SettingsClient(props: Props) {
       </div>
 
       {tab === 'agency' && (
-        <AgencySection initialClient={props.initialClient} initialBrand={props.initialBrand} />
+        <AgencySection initialClient={props.initialClient} initialBrand={props.initialBrand} productNames={props.initialProducts.map(p => p.name)} />
       )}
       {tab === 'sales' && (
         <SalesProcessSection initial={props.initialSalesProcess} />
       )}
       {tab === 'products' && (
-        <ProductsSection initialProducts={props.initialProducts} initialPricing={props.initialPricing} />
+        <ProductsSection key={props.initialProducts.length} initialProducts={props.initialProducts} initialPricing={props.initialPricing} />
       )}
       {tab === 'knowledge' && (
         <KnowledgeSection
+          key={props.initialPainPoints.length}
           initialPainPoints={props.initialPainPoints}
           initialSuccessStories={props.initialSuccessStories}
           initialObjections={props.initialObjections}
@@ -163,7 +165,7 @@ const textareaCls = inputCls + ' resize-y'
 // Agency & brand
 // ─────────────────────────────────────────────────────────────────────────
 
-function AgencySection({ initialClient, initialBrand }: { initialClient: Client | null; initialBrand: BrandVoice | null }) {
+function AgencySection({ initialClient, initialBrand, productNames }: { initialClient: Client | null; initialBrand: BrandVoice | null; productNames: string[] }) {
   const [form, setForm] = useState({
     company_name: initialClient?.company_name ?? '',
     industry: initialClient?.industry ?? '',
@@ -304,6 +306,19 @@ function AgencySection({ initialClient, initialBrand }: { initialClient: Client 
 
   return (
     <div className="space-y-6">
+      <WebsiteAutofill
+        website={form.website}
+        current={{
+          industry: form.industry,
+          about_agency: form.about_agency,
+          tone: form.tone,
+          language_style: form.language_style,
+          competitive_differentiators: form.competitive_differentiators,
+        }}
+        existingProductNames={productNames}
+        onApplyFields={fields => setForm(f => ({ ...f, ...fields }))}
+      />
+
       <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
         <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide">Datos generales</h2>
         <div className="grid grid-cols-2 gap-4">
