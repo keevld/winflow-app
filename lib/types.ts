@@ -34,6 +34,9 @@ export interface Proposal {
   view_count: number
   last_viewed_at: string | null
   sent_at: string | null
+  followups_paused?: boolean
+  followup_rhythm?: 'fast' | 'normal' | 'slow' | null
+  followup_rhythm_reason?: string | null
   outcome: 'won' | 'lost' | null
   outcome_at: string | null
   outcome_reason: string | null
@@ -147,6 +150,7 @@ export interface SalesProcess {
   followup_day2: number | null
   followup_day3: number | null
   followup_max_attempts: number | null
+  followup_auto?: boolean
   followup_notes: string | null
   industry_decision_pace: string | null
   industry_notes: string | null

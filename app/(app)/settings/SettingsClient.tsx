@@ -429,7 +429,8 @@ function SalesProcessSection({ initial }: { initial: SalesProcess | null }) {
     followup_day1: initial?.followup_day1 ?? 1,
     followup_day2: initial?.followup_day2 ?? 3,
     followup_day3: initial?.followup_day3 ?? 7,
-    followup_max_attempts: initial?.followup_max_attempts ?? 4,
+    followup_max_attempts: initial?.followup_max_attempts ?? 3,
+    followup_auto: initial?.followup_auto ?? false,
     followup_notes: initial?.followup_notes ?? '',
   })
   const [saving, setSaving] = useState(false)
@@ -493,12 +494,23 @@ function SalesProcessSection({ initial }: { initial: SalesProcess | null }) {
 
       <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
         <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide">Cadencia de seguimiento</h2>
-        <p className="text-xs text-gray-400">Días después del envío para cada recordatorio de seguimiento.</p>
+        <p className="text-xs text-gray-400">Días después del envío para cada recordatorio. Son el ritmo «normal»: Winflow los acorta o los estira por propuesta según el sector del prospecto, su tamaño y lo que se habló en la llamada (un comité o un sector de decisión lenta recibe seguimientos más espaciados). Puedes cambiar el ritmo en cada propuesta.</p>
+        <label className="flex gap-3 items-start text-sm bg-gray-50 border border-gray-200 rounded-lg p-3">
+          <input type="checkbox" className="mt-1" checked={form.followup_auto} onChange={e => set('followup_auto', e.target.checked)} />
+          <span>
+            <span className="font-medium text-gray-900">Enviar los seguimientos automáticamente</span>
+            <span className="block text-xs text-gray-500 mt-0.5">
+              Winflow escribe y manda cada recordatorio en los días indicados (una revisión al día), con el tono de tu marca.
+              Las respuestas llegan al correo de quien envió la propuesta. Se detienen solos si el prospecto acepta o si marcas la propuesta como ganada o perdida,
+              y puedes pausarlos propuesta por propuesta. Cada correo incluye una línea para que el prospecto pida no recibir más.
+            </span>
+          </span>
+        </label>
         <div className="grid grid-cols-4 gap-4">
           <Field label="1er seguimiento (día)"><input type="number" className={inputCls} value={form.followup_day1} onChange={e => set('followup_day1', Number(e.target.value))} /></Field>
           <Field label="2do seguimiento (día)"><input type="number" className={inputCls} value={form.followup_day2} onChange={e => set('followup_day2', Number(e.target.value))} /></Field>
           <Field label="3er seguimiento (día)"><input type="number" className={inputCls} value={form.followup_day3} onChange={e => set('followup_day3', Number(e.target.value))} /></Field>
-          <Field label="Máx. intentos"><input type="number" className={inputCls} value={form.followup_max_attempts} onChange={e => set('followup_max_attempts', Number(e.target.value))} /></Field>
+          <Field label="Máx. intentos (hasta 3)"><input type="number" min={1} max={3} className={inputCls} value={form.followup_max_attempts} onChange={e => set('followup_max_attempts', Math.min(3, Math.max(1, Number(e.target.value) || 1)))} /></Field>
         </div>
         <Field label="Notas de seguimiento"><textarea rows={2} className={textareaCls} value={form.followup_notes} onChange={e => set('followup_notes', e.target.value)} /></Field>
       </div>

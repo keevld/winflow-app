@@ -37,7 +37,8 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith('/auth/callback') ||
     pathname.startsWith('/p/') ||
     pathname.startsWith('/api/public/') ||
-    pathname.startsWith('/api/track/')
+    pathname.startsWith('/api/track/') ||
+    pathname.startsWith('/api/cron/') // protegido con CRON_SECRET dentro de la ruta
 
   if (!user && !isPublic) {
     return NextResponse.redirect(new URL('/login', request.url))

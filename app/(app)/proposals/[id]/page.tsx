@@ -6,6 +6,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import type { Proposal } from '@/lib/types'
 import { getEngagementStatus, ENGAGEMENT_TONE_CLASS } from '@/lib/engagement'
+import FollowupsCard from './FollowupsCard'
 
 const TIMEOUT_MS = 45_000
 
@@ -290,6 +291,16 @@ export default function ProposalPage() {
             Crear propuesta comercial
           </Link>
         </div>
+      )}
+
+      {isSent && (
+        <FollowupsCard
+          proposalId={proposal.id}
+          initialPaused={!!proposal.followups_paused}
+          initialRhythm={proposal.followup_rhythm ?? null}
+          initialRhythmReason={proposal.followup_rhythm_reason ?? null}
+          stopped={proposal.accepted_at ? 'el prospecto aceptó la propuesta' : proposal.outcome === 'won' ? 'la marcaste como ganada' : proposal.outcome === 'lost' ? 'la marcaste como perdida' : null}
+        />
       )}
 
       {/* Resultado de la venta */}

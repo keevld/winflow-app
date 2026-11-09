@@ -117,7 +117,7 @@ REGLAS
 4. Escribe en español neutro, en tercera persona para "about_agency" (2 a 4 frases, sin superlativos vacíos).
 5. "tone" y "language_style" describen cómo habla la agencia (p. ej. cercano y directo, formal y técnico), deducido de cómo está escrito el sitio, en 1 a 2 frases cada uno.
 6. "services": los servicios que la agencia ofrece según el sitio (los nombres de menú o de secciones de servicios cuentan como evidencia), de 3 a 8, nombre corto, descripción de 1 frase que no prometa resultados, y categoría en 1 a 2 palabras.
-7. "pain_points": problemas de clientes que el sitio dice resolver (máximo 5). "impact" solo si el sitio lo expresa; si no, null.
+7. "pain_points": problemas de clientes que el sitio dice o da a entender que resuelve (máximo 5), apoyados principalmente en lo que el sitio escribe; no los inventes de la nada. "impact" solo si el sitio lo expresa; si no, null.
 8. "competitive_differentiators": solo lo que el sitio presenta como diferencial, 1 a 3 frases; si no hay, null.
 
 FORMATO
