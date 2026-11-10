@@ -89,6 +89,24 @@ export function groupOptions(items: PriceItem[]): PriceOption[] {
   })
 }
 
+const RECURRING_RE = /mensual|mes\b|month|trimestral|semestral|anual|semanal|quincenal/i
+
+/** Separa lo que se paga cada periodo (p. ej. mensual) de lo que se paga una sola vez, por moneda. */
+export function splitTotals(items: Pick<PriceItem, 'quantity' | 'unit_price' | 'discount_pct' | 'currency' | 'billing_period'>[]): {
+  recurring: Record<string, number>
+  once: Record<string, number>
+} {
+  const recurring: Record<string, number> = {}
+  const once: Record<string, number> = {}
+  for (const it of items) {
+    const t = itemTotal(it)
+    if (t === null) continue
+    const bucket = it.billing_period && RECURRING_RE.test(it.billing_period) ? recurring : once
+    bucket[it.currency] = Math.round(((bucket[it.currency] ?? 0) + t) * 100) / 100
+  }
+  return { recurring, once }
+}
+
 export function formatMoney(amount: number, currency: string): string {
   try {
     return new Intl.NumberFormat('es-MX', { style: 'currency', currency, maximumFractionDigits: 2 }).format(amount)
@@ -174,4 +192,15 @@ export function sanitizeItems(raw: unknown): PriceItem[] {
     })
   })
   return out
+}
+
+/** Texto de total que separa lo mensual de lo de una sola vez (p. ej. "$17,500.00/mes + $14,500.00 una sola vez"). */
+export function formatSplitTotals(items: Pick<PriceItem, 'quantity' | 'unit_price' | 'discount_pct' | 'currency' | 'billing_period'>[]): string {
+  const { recurring, once } = splitTotals(items)
+  const hasRecurring = Object.keys(recurring).length > 0
+  const parts = [
+    ...Object.entries(recurring).map(([cur, v]) => `${formatMoney(v, cur)}/mes`),
+    ...Object.entries(once).map(([cur, v]) => `${formatMoney(v, cur)}${hasRecurring ? ' una sola vez' : ''}`),
+  ]
+  return parts.length ? parts.join(' + ') : 'Por definir'
 }

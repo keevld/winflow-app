@@ -3,7 +3,7 @@ import AcceptBox from './AcceptBox'
 import PrintButton from './PrintButton'
 import PrintSheet from './PrintSheet'
 import { BarContinue, PickButton, SelectionProvider } from './Selection'
-import { itemTotal, type CommercialContent, type PriceItem, type PriceOption } from '@/lib/commercial'
+import { itemTotal, splitTotals, type CommercialContent, type PriceItem, type PriceOption } from '@/lib/commercial'
 import { inkColor, luminance, onColor } from '@/lib/color'
 import './proposal.css'
 
@@ -40,8 +40,14 @@ const money = (n: number, cur: string) => {
     return `${n.toLocaleString('es-MX')} ${cur}`
   }
 }
-const totalsText = (t: Record<string, number>) => {
-  const parts = Object.entries(t).map(([cur, v]) => money(v, cur))
+
+// Muestra por separado lo mensual y lo de una sola vez, para no sumar peras con manzanas.
+const itemsTotalsText = (items: PriceItem[]) => {
+  const { recurring, once } = splitTotals(items)
+  const parts = [
+    ...Object.entries(recurring).map(([cur, v]) => `${money(v, cur)}/mes`),
+    ...Object.entries(once).map(([cur, v]) => `${money(v, cur)}${Object.keys(recurring).length ? ' una sola vez' : ''}`),
+  ]
   return parts.length ? parts.join(' + ') : 'Por definir'
 }
 
@@ -120,10 +126,6 @@ export default function CommercialDocument(p: CommercialDocumentProps) {
   const packages = p.mode === 'packages' && options.length > 1
   const title = c.title || `Propuesta para ${p.prospectCompany || p.prospectName}`
   const forWhom = p.prospectCompany || p.prospectName
-  const grand = options.reduce<Record<string, number>>((acc, o) => {
-    for (const [cur, v] of Object.entries(o.totals)) acc[cur] = Math.round(((acc[cur] ?? 0) + v) * 100) / 100
-    return acc
-  }, {})
   const needsChoice = packages
   // El logo se pone directo sobre la portada si contrasta con el color de marca; si no, sobre una placa.
   let logoClass = 'pd-logo-plate'
@@ -136,7 +138,7 @@ export default function CommercialDocument(p: CommercialDocumentProps) {
   if (p.logoBg) logoClass = 'pd-logo-badge'
   // El flujo de elegir y continuar se ve siempre (también en la vista previa); solo se envía si canAccept.
   const selectable = !p.acceptedAt && !p.expired
-  const planOptions = options.map(o => ({ key: o.key, label: o.label, total: totalsText(o.totals) }))
+  const planOptions = options.map(o => ({ key: o.key, label: o.label, total: itemsTotalsText(o.items) }))
   const acceptedLabel = planOptions.find(o => o.key === p.acceptedOption)?.label ?? null
 
   return (
@@ -224,7 +226,7 @@ export default function CommercialDocument(p: CommercialDocumentProps) {
                   <div key={o.key} className={`pd-pkg${o.recommended ? ' pd-pkg--rec' : ''}${p.acceptedOption === o.key ? ' pd-pkg--chosen' : ''}`}>
                     {o.recommended && <span className="pd-pkg-badge">Recomendada</span>}
                     <h3>{o.label}</h3>
-                    <p className="pd-price">{totalsText(o.totals)}</p>
+                    <p className="pd-price">{itemsTotalsText(o.items)}</p>
                     <Lines items={o.items} compact />
                     {selectable && <PickButton optionKey={o.key} />}
                   </div>
@@ -233,7 +235,7 @@ export default function CommercialDocument(p: CommercialDocumentProps) {
             ) : (
               <div className="pd-table">
                 <Lines items={options.flatMap(o => o.items)} />
-                <div className="pd-total"><span>Total</span><span>{totalsText(grand)}</span></div>
+                <div className="pd-total"><span>Total</span><span>{itemsTotalsText(options.flatMap(o => o.items))}</span></div>
               </div>
             )}
             {p.validUntil && <p className="pd-validity">Precios vigentes hasta el {longDate(p.validUntil)}.</p>}

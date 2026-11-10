@@ -8,7 +8,7 @@ import type { Proposal } from '@/lib/types'
 import {
   EMPTY_CONTENT,
   groupOptions,
-  formatTotals,
+  formatSplitTotals,
   formatMoney,
   itemTotal,
   sanitizeContent,
@@ -378,7 +378,7 @@ export default function CommercialEditorPage() {
               </div>
               <div className="flex items-center justify-between">
                 <button type="button" className="text-sm text-gray-700 underline" onClick={() => addItem(opt.key, opt.items[0]?.option_label ?? null)}>+ Agregar concepto</button>
-                <span className="text-sm font-semibold text-gray-900">Total: {formatTotals(opt.totals)}{opt.hasMissingPrice ? ' (incompleto)' : ''}</span>
+                <span className="text-sm font-semibold text-gray-900">Total: {formatSplitTotals(opt.items)}{opt.hasMissingPrice ? ' (incompleto)' : ''}</span>
               </div>
             </div>
           ))}
