@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createHash } from 'node:crypto'
 import { createServiceClient } from '@/lib/supabase/server'
 import { rateLimit, clientIp, tooMany } from '@/lib/rate-limit'
+import { appOrigin } from '@/lib/app-url'
 
 export const maxDuration = 60
 
@@ -34,7 +35,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
   ])
 
   const hash = createHash('sha1')
-    .update(JSON.stringify([p.commercial, p.proposal_text, p.valid_until, items, brand, agency, 'v4']))
+    .update(JSON.stringify([p.commercial, p.proposal_text, p.valid_until, items, brand, agency, 'v5']))
     .digest('hex')
     .slice(0, 16)
   const path = `commercial-pdf/${p.id}/${hash}.pdf`
@@ -45,7 +46,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
   if (cached) {
     bytes = Buffer.from(await cached.arrayBuffer())
   } else {
-    const origin = new URL(req.url).origin
+    const origin = appOrigin(new URL(req.url).origin)
     const res = await fetch('https://api.pdfshift.io/v3/convert/pdf', {
       method: 'POST',
       headers: {

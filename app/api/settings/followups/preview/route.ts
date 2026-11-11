@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { requireAdminContext, isAdminContext } from '@/lib/api-auth'
 import { rateLimit, tooMany } from '@/lib/rate-limit'
 import { draftFollowup, loadAgencyPublic, FOLLOWUP_PROPOSAL_COLS } from '@/lib/followups'
+import { appOrigin } from '@/lib/app-url'
 
 export const maxDuration = 60
 
@@ -26,7 +27,7 @@ export async function POST(req: NextRequest) {
   try {
     const ag = await loadAgencyPublic(service, clientId)
     const rhythm = p.followup_rhythm === 'fast' || p.followup_rhythm === 'slow' ? p.followup_rhythm : 'normal'
-    const d = await draftFollowup(service, ag, p as never, attempt, req.nextUrl.origin, rhythm)
+    const d = await draftFollowup(service, ag, p as never, attempt, appOrigin(req.nextUrl.origin), rhythm)
     return NextResponse.json({ data: { subject: d.subject, body: d.body, reply_to: d.replyTo, html: d.html } })
   } catch (e) {
     console.error('followup preview failed', e instanceof Error ? e.message : e)

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/server'
 import { runFollowups } from '@/lib/followups'
+import { appOrigin } from '@/lib/app-url'
 
 export const maxDuration = 300
 
@@ -16,7 +17,7 @@ export async function GET(req: NextRequest) {
   const dry = req.nextUrl.searchParams.get('dry') === '1'
   const service = await createServiceClient()
   try {
-    const out = await runFollowups(service, { origin: req.nextUrl.origin, dry })
+    const out = await runFollowups(service, { origin: appOrigin(req.nextUrl.origin), dry })
     return NextResponse.json({ ok: true, dry, ...out })
   } catch (e) {
     console.error('followups cron failed', e instanceof Error ? e.message : e)

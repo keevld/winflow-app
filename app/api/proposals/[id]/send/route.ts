@@ -4,6 +4,7 @@ import { sanitizeContent } from '@/lib/commercial'
 import { onColor } from '@/lib/color'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { rateLimit, clientIp, tooMany } from '@/lib/rate-limit'
+import { appOrigin } from '@/lib/app-url'
 
 export const maxDuration = 60
 
@@ -134,7 +135,7 @@ export async function POST(
   const isCommercial = full.proposal_type === 'commercial'
   const esc = (t: string) => t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
   const color = /^#[0-9a-fA-F]{6}$/.test(brand?.primary_color ?? '') ? (brand!.primary_color as string) : '#111827'
-  const viewUrl = full.public_slug ? `${new URL(req.url).origin}/p/${full.public_slug}` : null
+  const viewUrl = full.public_slug ? `${appOrigin(new URL(req.url).origin)}/p/${full.public_slug}` : null
 
   let pdfUrl: string | null = null
   let pdfName = 'Propuesta.pdf'
@@ -163,7 +164,7 @@ export async function POST(
       ? `<p style="margin:16px 0 0;font-size:13px;color:#6b7280">Esta propuesta está vigente hasta el ${new Date(`${full.valid_until}T12:00:00`).toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' })}.</p>`
       : ''
     if (hasPdf && full.public_slug) {
-      pdfUrl = `${new URL(req.url).origin}/api/public/proposals/${full.public_slug}/pdf`
+      pdfUrl = `${appOrigin(new URL(req.url).origin)}/api/public/proposals/${full.public_slug}/pdf`
       pdfName = `Propuesta - ${(full.prospect_company ?? 'comercial').replace(/[^\w .-]/g, '').trim()}.pdf`
       // Se genera (y queda en caché) antes de enviar; si falla, el correo sale sin adjunto en vez de fallar.
       const probe = await fetch(pdfUrl).catch(() => null)
@@ -191,7 +192,7 @@ ${when ? `<p style="margin:0 0 6px;font-size:14px;color:#6a645c">Vigente hasta e
   } else {
     // Con PDFShift configurado, la propuesta inicial también usa el PDF del nuevo diseño.
     if (process.env.PDFSHIFT_API_KEY && full.public_slug) {
-      const ours = `${new URL(req.url).origin}/api/public/proposals/${full.public_slug}/pdf`
+      const ours = `${appOrigin(new URL(req.url).origin)}/api/public/proposals/${full.public_slug}/pdf`
       const probe = await fetch(ours).catch(() => null)
       if (probe?.ok) {
         pdfUrl = ours
