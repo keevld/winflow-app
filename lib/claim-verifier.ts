@@ -22,7 +22,14 @@ const digitsOf = (s: string): Set<string> =>
 
 const norm = (s: string) => s.replace(/\s+/g, ' ').trim()
 
+// Cuenta señales de redacción rota (puntuación huérfana) para no aplicar arreglos que dejen el texto mal.
+const brokenCount = (t: string): number =>
+  (t.match(/(^|\n)\s*[,;.)]/g) ?? []).length + (t.match(/[,;]\s*(?:y|o|e|pero)?\s*\./g) ?? []).length +
+  (t.match(/,\s*,/g) ?? []).length + (t.match(/\s[,.;](?=\s|$)/g) ?? []).length
+
 const SYSTEM = `Eres un verificador de hechos para propuestas comerciales que una agencia enviará a un prospecto real. Tu único trabajo es encontrar afirmaciones FACTUALES que no estén respaldadas por las FUENTES que te doy, para que no se envíe nada inventado.
+
+También cuentan las generalizaciones sobre cómo se comporta un mercado, una ciudad o un público (p. ej. "la gente en Guadalajara decide dónde comer en Instagram", "los restaurantes suelen…") cuando se presentan como hecho y no están en las fuentes.
 
 Cuenta como afirmación factual verificable: cifras, porcentajes, estadísticas, montos, fechas, plazos, duraciones (p. ej. "llamada de 20 minutos"), garantías, resultados, nombres de clientes o casos, afirmaciones sobre el mercado o una ciudad, afirmaciones sobre la agencia (servicios, experiencia, equipo, condiciones) y afirmaciones sobre el prospecto (su situación, su historia, lo que ya intentó).
 
@@ -31,9 +38,9 @@ Lo respaldado es lo que aparece en las FUENTES: base de la agencia (servicios, p
 NO marques: argumentos persuasivos, opiniones razonables, conclusiones lógicas, transiciones, llamadas a la acción ni redacción comercial que no afirme un hecho concreto. Un caso de éxito de la agencia puede mencionarse si está en las fuentes y no se nombra al cliente. Sé preciso: es mejor marcar pocas cosas reales que muchas dudosas.
 
 Para cada problema devuelve:
-- "quote": fragmento EXACTO y contiguo copiado literalmente del texto (una oración o cláusula, máx. 240 caracteres). Debe aparecer tal cual.
+- "quote": una o varias ORACIONES COMPLETAS copiadas literalmente del texto, desde la primera palabra de la oración hasta su punto final (máx. 400 caracteres). Nunca un fragmento a mitad de oración. Debe aparecer tal cual.
 - "problem": en una frase corta, qué no tiene respaldo.
-- "fix": texto que REEMPLAZA exactamente a "quote": mismo tono y misma gramática, sin la afirmación sin respaldo, sin añadir cifras, fechas ni hechos nuevos. Si la frase sobra sin ella, usa "" para eliminarla.
+- "fix": oración(es) completa(s) y bien puntuada(s) que REEMPLAZAN exactamente a "quote": mismo tono, sin la afirmación sin respaldo, sin añadir cifras, fechas ni hechos nuevos. Debe leerse natural entre las oraciones vecinas. Si la oración sobra sin ella, usa "".
 - "severity": "invented" si es una cifra, estadística, plazo, fecha o hecho concreto sin respaldo; "weak" si es una afirmación general sin respaldo.
 
 Responde SOLO un JSON: {"issues":[{"quote":"...","problem":"...","fix":"...","severity":"invented"}]}. Si no hay problemas: {"issues":[]}.`
@@ -102,7 +109,9 @@ export async function verifyIntro(
     // El arreglo no puede traer cifras nuevas que tampoco tengan respaldo.
     const fixDigits = fix ? [...digitsOf(fix)].filter(d => !supportDigits.has(d) && !digitsOf(quote).has(d)) : []
     if (fix === null || fixDigits.length) { review.push({ quote: quote.slice(0, 240), problem }); continue }
-    text = text.replace(quote, fix).replace(/[ \t]+\n/g, '\n').replace(/ {2,}/g, ' ').replace(/\n{3,}/g, '\n\n')
+    const candidate = text.replace(quote, fix).replace(/[ \t]+\n/g, '\n').replace(/ {2,}/g, ' ').replace(/\n{3,}/g, '\n\n')
+    if (brokenCount(candidate) > brokenCount(text)) { review.push({ quote: quote.slice(0, 240), problem: `${problem} (no se pudo corregir sin romper la redacción; edítalo a mano)` }); continue }
+    text = candidate
     if (emailOut && emailOut.includes(quote)) emailOut = emailOut.replace(quote, fix)
     changes.push({ before: quote.slice(0, 400), after: fix.slice(0, 400), problem })
   }
