@@ -8,7 +8,7 @@ import type { Proposal } from '@/lib/types'
 import { getEngagementStatus, ENGAGEMENT_TONE_CLASS } from '@/lib/engagement'
 import FollowupsCard from './FollowupsCard'
 
-const TIMEOUT_MS = 45_000
+const TIMEOUT_MS = 150_000
 
 export default function ProposalPage() {
   const { id } = useParams<{ id: string }>()
@@ -70,8 +70,8 @@ export default function ProposalPage() {
             await supabase
               .from('proposals')
               .update({ status: 'failed' })
-              .eq('id', id)
-            setProposal(p => p ? { ...p, status: 'failed' } : p)
+              .eq('id', id).eq('status', 'generating').is('pdf_url', null)
+            setProposal(p => p && !p.pdf_url ? { ...p, status: 'failed' } : p)
           }, TIMEOUT_MS)
         }
       }
@@ -141,6 +141,22 @@ export default function ProposalPage() {
     return () => clearTimeout(t)
   }, [vs, verifyRun])
 
+  // Respaldo del tiempo real: mientras se genera o verifica, consulta el estado cada 4 s.
+  const st = proposal?.status ?? null
+  useEffect(() => {
+    if (st !== 'generating' && vs !== 'checking') return
+    const supabase = createClient()
+    const t = setInterval(async () => {
+      const { data } = await supabase.from('proposals').select('*').eq('id', id).single()
+      if (!data) return
+      setProposal(data)
+      setEmailHtml(data.email_html ?? '')
+      setProposalText(data.proposal_text ?? '')
+      if (data.pdf_url) { refreshPdfUrl(); setTimedOut(false) }
+    }, 4000)
+    return () => clearInterval(t)
+  }, [st, vs, id, refreshPdfUrl])
+
   async function handleRetry() {
     if (!proposal) return
     setTimedOut(false)
@@ -172,8 +188,8 @@ export default function ProposalPage() {
     const supabase = createClient()
     timerRef.current = setTimeout(async () => {
       setTimedOut(true)
-      await supabase.from('proposals').update({ status: 'failed' }).eq('id', id)
-      setProposal(p => p ? { ...p, status: 'failed' } : p)
+      await supabase.from('proposals').update({ status: 'failed' }).eq('id', id).eq('status', 'generating').is('pdf_url', null)
+      setProposal(p => p && !p.pdf_url ? { ...p, status: 'failed' } : p)
     }, TIMEOUT_MS)
   }
 
@@ -219,8 +235,8 @@ export default function ProposalPage() {
       const supabase = createClient()
       timerRef.current = setTimeout(async () => {
         setTimedOut(true)
-        await supabase.from('proposals').update({ status: 'failed' }).eq('id', id)
-        setProposal(p => p ? { ...p, status: 'failed' } : p)
+        await supabase.from('proposals').update({ status: 'failed' }).eq('id', id).eq('status', 'generating').is('pdf_url', null)
+        setProposal(p => p && !p.pdf_url ? { ...p, status: 'failed' } : p)
       }, TIMEOUT_MS)
     } catch (err: unknown) {
       setRegenerateError(err instanceof Error ? err.message : 'Error desconocido')
@@ -282,7 +298,7 @@ export default function ProposalPage() {
   }
 
   const isGenerating = proposal.status === 'generating' && !proposal.pdf_url && !timedOut
-  const isFailed = proposal.status === 'failed' || timedOut
+  const isFailed = (proposal.status === 'failed' || timedOut) && !proposal.pdf_url
   const isReady = !!proposal.pdf_url
   const isSent = proposal.status === 'sent'
   const vStatus = proposal.verification_status ?? null
@@ -381,8 +397,12 @@ export default function ProposalPage() {
       {isGenerating && (
         <div className="bg-white rounded-xl border border-gray-200 p-8 text-center">
           <div className="animate-spin w-8 h-8 border-2 border-gray-900 border-t-transparent rounded-full mx-auto mb-4" />
-          <p className="text-sm text-gray-700 font-medium">Generando propuesta con IA...</p>
-          <p className="text-xs text-gray-400 mt-1">Esto toma entre 20 y 45 segundos</p>
+          <p className="text-sm text-gray-700 font-medium">
+            {proposal.verification_status ? 'Aplicando las correcciones y actualizando el PDF…' : 'Generando propuesta con IA...'}
+          </p>
+          <p className="text-xs text-gray-400 mt-1">
+            {proposal.verification_status ? 'Toma alrededor de 40 segundos' : 'Esto toma entre 20 y 60 segundos'}
+          </p>
         </div>
       )}
 
@@ -403,7 +423,7 @@ export default function ProposalPage() {
       {/* Content ready */}
       {isReady && (
         <>
-          {/* Verificación de afirmaciones */}
+          {/* Verificación de datos */}
           {proposal.proposal_type === 'intro' && !isSent && (
             <div className={`rounded-xl border p-5 text-sm ${
               verifyError || vStatus === 'error' ? 'bg-red-50 border-red-200'
@@ -415,7 +435,7 @@ export default function ProposalPage() {
               {verifying && (
                 <div className="flex items-center gap-3 text-gray-700">
                   <div className="animate-spin w-4 h-4 border-2 border-gray-700 border-t-transparent rounded-full" />
-                  <span>Verificando que cada dato de la propuesta tenga respaldo antes de que puedas enviarla…</span>
+                  <span>Revisando que todo lo que dice la propuesta salga de tu información…</span>
                   {verifyStuck && (
                     <button onClick={() => runVerification(true)} className="ml-auto text-xs underline">Reintentar</button>
                   )}
@@ -423,39 +443,47 @@ export default function ProposalPage() {
               )}
               {(verifyError || vStatus === 'error') && (
                 <div className="flex items-center gap-3 text-red-700">
-                  <span>No pudimos verificar la propuesta automáticamente. Revísala con cuidado antes de enviar.</span>
-                  <button onClick={() => runVerification(true)} className="ml-auto text-xs underline whitespace-nowrap">Reintentar verificación</button>
+                  <span>No pudimos revisar la propuesta automáticamente. Léela con cuidado antes de enviar.</span>
+                  <button onClick={() => runVerification(true)} className="ml-auto text-xs underline whitespace-nowrap">Reintentar</button>
                 </div>
               )}
               {vStatus === 'ok' && (
-                <p className="text-green-800 font-medium">Verificada: no encontramos datos sin respaldo en tu información, las notas ni las fuentes.</p>
+                <p className="text-green-800">
+                  <span className="font-medium">Propuesta revisada.</span> Todo lo que dice sale de tu información, de las notas del prospecto o de su sitio web.
+                </p>
               )}
               {(vStatus === 'fixed' || vStatus === 'review') && proposal.verification && (
                 <div className="space-y-3">
                   {proposal.verification.changes.length > 0 && (
-                    <div>
-                      <p className="font-medium text-gray-900">
-                        Ajustamos {proposal.verification.changes.length} {proposal.verification.changes.length === 1 ? 'afirmación' : 'afirmaciones'} que no tenían respaldo
-                      </p>
-                      <ul className="mt-2 space-y-2">
+                    <details>
+                      <summary className="cursor-pointer text-gray-900">
+                        <span className="font-medium">
+                          Corregimos {proposal.verification.changes.length} {proposal.verification.changes.length === 1 ? 'frase' : 'frases'} automáticamente.
+                        </span>{' '}
+                        <span className="text-gray-600">La IA escribió algo que no está en tu información (una cifra, un dato o una promesa) y ya lo quitamos. Ver qué cambió</span>
+                      </summary>
+                      <ul className="mt-3 space-y-3">
                         {proposal.verification.changes.map((c, i) => (
-                          <li key={i} className="text-xs text-gray-600">
-                            <span className="line-through text-gray-400">{c.before}</span>
-                            {c.after ? <span className="block text-gray-800">→ {c.after}</span> : <span className="block text-gray-800">→ (se eliminó)</span>}
-                            <span className="block text-gray-500">{c.problem}</span>
+                          <li key={i} className="text-xs bg-white/70 rounded-lg p-3 space-y-1">
+                            <p><span className="font-medium text-gray-700">Decía:</span> <span className="text-gray-600">&ldquo;{c.before}&rdquo;</span></p>
+                            <p><span className="font-medium text-gray-700">Ahora dice:</span> <span className="text-gray-800">{c.after ? `“${c.after}”` : 'Quitamos esa frase.'}</span></p>
+                            <p><span className="font-medium text-gray-700">Por qué:</span> <span className="text-gray-600">{c.problem}</span></p>
                           </li>
                         ))}
                       </ul>
-                    </div>
+                    </details>
                   )}
                   {proposal.verification.review.length > 0 && (
                     <div>
-                      <p className="font-medium text-amber-900">Revisa esto antes de enviar</p>
+                      <p className="font-medium text-amber-900">
+                        Revisa {proposal.verification.review.length} {proposal.verification.review.length === 1 ? 'frase' : 'frases'} antes de enviar
+                      </p>
+                      <p className="text-xs text-gray-600 mt-0.5">No pudimos confirmarlas con tu información. Si sabes que son ciertas, déjalas; si no, edítalas en el texto de abajo.</p>
                       <ul className="mt-2 space-y-2">
                         {proposal.verification.review.map((r, i) => (
-                          <li key={i} className="text-xs text-gray-700">
-                            <span className="block">&ldquo;{r.quote}&rdquo;</span>
-                            <span className="block text-gray-500">{r.problem}</span>
+                          <li key={i} className="text-xs bg-white/70 rounded-lg p-3 space-y-1">
+                            <p className="text-gray-800">&ldquo;{r.quote}&rdquo;</p>
+                            <p className="text-gray-500">{r.problem}</p>
                           </li>
                         ))}
                       </ul>

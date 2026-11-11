@@ -84,6 +84,8 @@ export async function POST(req: NextRequest) {
     .update({
       status: 'generating',
       failure_reason: null,
+      verification_status: null,
+      verification: null,
       generation_started_at: new Date().toISOString(),
       generation_attempts: (proposal as { generation_attempts?: number }).generation_attempts
         ? (proposal as { generation_attempts: number }).generation_attempts + 1
