@@ -55,27 +55,27 @@ export default function PilotForm() {
     <form className="lp-form" onSubmit={onSubmit}>
       <div className="lp-row">
         <label>
-          Nombre de la agencia
+          <span>Nombre de la agencia</span>
           <input name="agency_name" required maxLength={120} autoComplete="organization" />
         </label>
         <label>
-          Tu nombre
+          <span>Tu nombre</span>
           <input name="contact_name" required maxLength={120} autoComplete="name" />
         </label>
       </div>
       <div className="lp-row">
         <label>
-          Correo
+          <span>Correo</span>
           <input name="email" type="email" required maxLength={320} autoComplete="email" />
         </label>
         <label>
-          Sitio web <span className="lp-opt">(opcional)</span>
+          <span>Sitio web <span className="lp-opt">(opcional)</span></span>
           <input name="website" maxLength={300} placeholder="tuagencia.com" autoComplete="url" />
         </label>
       </div>
       <div className="lp-row">
         <label>
-          Tamaño del equipo
+          <span>Tamaño del equipo</span>
           <select name="team_size" defaultValue="">
             <option value="">Elige una opción</option>
             <option value="1">Solo yo</option>
@@ -85,7 +85,7 @@ export default function PilotForm() {
           </select>
         </label>
         <label>
-          ¿Cómo registras tus llamadas con prospectos?
+          <span>¿Cómo registras tus llamadas con prospectos?</span>
           <select name="call_tool" defaultValue="">
             <option value="">Elige una opción</option>
             <option value="notas">Tomo notas a mano</option>
@@ -99,7 +99,7 @@ export default function PilotForm() {
         </label>
       </div>
       <label>
-        ¿Algo que quieras contarnos? <span className="lp-opt">(opcional)</span>
+        <span>¿Algo que quieras contarnos? <span className="lp-opt">(opcional)</span></span>
         <textarea name="message" rows={3} maxLength={1000} placeholder="Por ejemplo: cuántas propuestas envías al mes o qué te frena hoy al cerrar." />
       </label>
       {/* Honeypot: las personas no lo ven; los bots sí lo rellenan. */}

@@ -120,3 +120,5 @@ html { scroll-behavior: smooth; }
 .lp-legal h2 { font-size: 24px; margin: 36px 0 10px; }
 .lp-legal p, .lp-legal li { color: var(--ink); margin-bottom: 10px; }
 .lp-legal ul { padding-left: 22px !important; }
+
+.lp main > section, .lp-request { scroll-margin-top: 84px; }
