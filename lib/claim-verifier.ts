@@ -40,7 +40,7 @@ NO marques: argumentos persuasivos, opiniones razonables, conclusiones lógicas,
 Para cada problema devuelve:
 - "quote": una o varias ORACIONES COMPLETAS copiadas literalmente del texto, desde la primera palabra de la oración hasta su punto final (máx. 400 caracteres). Nunca un fragmento a mitad de oración. Debe aparecer tal cual.
 - "problem": en una frase corta, qué no tiene respaldo.
-- "fix": oración(es) completa(s) y bien puntuada(s) que REEMPLAZAN exactamente a "quote": mismo tono, sin la afirmación sin respaldo, sin añadir cifras, fechas ni hechos nuevos. Debe leerse natural entre las oraciones vecinas. Si la oración sobra sin ella, usa "".
+- "fix": oración(es) completa(s) y bien puntuada(s) que REEMPLAZAN exactamente a "quote": mismo tono, sin la afirmación sin respaldo, sin añadir cifras, fechas, hechos ni generalizaciones nuevas sobre el mercado o el público (no sustituyas una afirmación sin respaldo por otra parecida). Si la idea ya está dicha en una oración vecina, usa "". Debe leerse natural entre las oraciones vecinas. Si la oración sobra sin ella, usa "".
 - "severity": "invented" si es una cifra, estadística, plazo, fecha o hecho concreto sin respaldo; "weak" si es una afirmación general sin respaldo.
 
 Responde SOLO un JSON: {"issues":[{"quote":"...","problem":"...","fix":"...","severity":"invented"}]}. Si no hay problemas: {"issues":[]}.`
@@ -109,11 +109,13 @@ export async function verifyIntro(
     // El arreglo no puede traer cifras nuevas que tampoco tengan respaldo.
     const fixDigits = fix ? [...digitsOf(fix)].filter(d => !supportDigits.has(d) && !digitsOf(quote).has(d)) : []
     if (fix === null || fixDigits.length) { review.push({ quote: quote.slice(0, 240), problem }); continue }
-    const candidate = text.replace(quote, fix).replace(/[ \t]+\n/g, '\n').replace(/ {2,}/g, ' ').replace(/\n{3,}/g, '\n\n')
+    // Si el arreglo ya existe en el texto, solo se elimina la oración con problema.
+    const fixFinal = fix.trim() && norm(text.replace(quote, '')).includes(norm(fix)) ? '' : fix
+    const candidate = text.replace(quote, fixFinal).replace(/[ \t]+\n/g, '\n').replace(/ {2,}/g, ' ').replace(/\n{3,}/g, '\n\n')
     if (brokenCount(candidate) > brokenCount(text)) { review.push({ quote: quote.slice(0, 240), problem: `${problem} (no se pudo corregir sin romper la redacción; edítalo a mano)` }); continue }
     text = candidate
-    if (emailOut && emailOut.includes(quote)) emailOut = emailOut.replace(quote, fix)
-    changes.push({ before: quote.slice(0, 400), after: fix.slice(0, 400), problem })
+    if (emailOut && emailOut.includes(quote)) emailOut = emailOut.replace(quote, fixFinal)
+    changes.push({ before: quote.slice(0, 400), after: fixFinal.slice(0, 400), problem })
   }
 
   // Revisión determinista final: cifras que siguen sin respaldo en el texto resultante.
