@@ -25,6 +25,13 @@ export interface Proposal {
   proposal_text: string | null
   market_sources?: { title: string; url: string; quote: string }[] | null
   generation_warnings?: string[] | null
+  verification_status?: 'checking' | 'ok' | 'fixed' | 'review' | 'error' | null
+  verification?: {
+    status: 'ok' | 'fixed' | 'review' | 'error'
+    checked_at: string
+    changes: { before: string; after: string; problem: string }[]
+    review: { quote: string; problem: string }[]
+  } | null
   generation_started_at?: string | null
   email_html: string | null
   pdf_url: string | null

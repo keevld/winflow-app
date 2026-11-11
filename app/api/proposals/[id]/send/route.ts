@@ -33,7 +33,7 @@ export async function POST(
   // ── 3. Proposal — load with anon client (RLS pre-filters) ─
   const { data: proposal } = await supabase
     .from('proposals')
-    .select('id, client_id, created_by, status, prospect_email')
+    .select('id, client_id, created_by, status, prospect_email, proposal_type, verification_status')
     .eq('id', id)
     .single()
 
@@ -56,6 +56,11 @@ export async function POST(
 
   if (proposal.status !== 'ready') {
     return NextResponse.json({ error: 'Proposal must be ready before sending' }, { status: 400 })
+  }
+
+  // Las propuestas iniciales no salen sin pasar por el verificador de afirmaciones.
+  if (proposal.proposal_type === 'intro' && (!proposal.verification_status || proposal.verification_status === 'checking')) {
+    return NextResponse.json({ error: 'Estamos verificando que todo en la propuesta tenga respaldo. Espera unos segundos e inténtalo de nuevo.' }, { status: 409 })
   }
 
   // ── 5. Config ─────────────────────────────────────────────

@@ -29,6 +29,10 @@ export default function ProposalPage() {
   const [lostReason, setLostReason] = useState('')
   const [askingLost, setAskingLost] = useState(false)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const verifyStartedRef = useRef(false)
+  const [verifyError, setVerifyError] = useState('')
+  const [verifyStuck, setVerifyStuck] = useState(false)
+  const [verifyRun, setVerifyRun] = useState(0)
 
   const refreshPdfUrl = useCallback(async () => {
     const res = await fetch(`/api/proposals/${id}/pdf-url`)
@@ -104,6 +108,38 @@ export default function ProposalPage() {
       if (timerRef.current) clearTimeout(timerRef.current)
     }
   }, [id, refreshPdfUrl])
+
+  // Verificador de afirmaciones: corre solo, una vez, cuando la propuesta inicial queda lista.
+  const runVerification = useCallback(async (force = false) => {
+    setVerifyError('')
+    setVerifyStuck(false)
+    setVerifyRun(n => n + 1)
+    try {
+      const res = await fetch(`/api/proposals/${id}/verify${force ? '?force=1' : ''}`, { method: 'POST' })
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}))
+        throw new Error(body.error ?? 'No se pudo verificar la propuesta')
+      }
+    } catch (err: unknown) {
+      setVerifyError(err instanceof Error ? err.message : 'Error desconocido')
+    }
+  }, [id])
+
+  useEffect(() => {
+    if (!proposal) return
+    if (proposal.proposal_type !== 'intro' || proposal.status !== 'ready' || !proposal.pdf_url) return
+    if (proposal.verification_status || verifyStartedRef.current) return
+    verifyStartedRef.current = true
+    runVerification()
+  }, [proposal, runVerification])
+
+  // Si la verificación tarda demasiado, se ofrece reintentar.
+  const vs = proposal?.verification_status ?? null
+  useEffect(() => {
+    if (vs && vs !== 'checking') return
+    const t = setTimeout(() => setVerifyStuck(true), 150_000)
+    return () => clearTimeout(t)
+  }, [vs, verifyRun])
 
   async function handleRetry() {
     if (!proposal) return
@@ -249,6 +285,8 @@ export default function ProposalPage() {
   const isFailed = proposal.status === 'failed' || timedOut
   const isReady = !!proposal.pdf_url
   const isSent = proposal.status === 'sent'
+  const vStatus = proposal.verification_status ?? null
+  const verifying = proposal.proposal_type === 'intro' && !isSent && (vStatus === null || vStatus === 'checking') && !verifyError
 
   return (
     <div className="max-w-3xl space-y-6">
@@ -365,6 +403,69 @@ export default function ProposalPage() {
       {/* Content ready */}
       {isReady && (
         <>
+          {/* Verificación de afirmaciones */}
+          {proposal.proposal_type === 'intro' && !isSent && (
+            <div className={`rounded-xl border p-5 text-sm ${
+              verifyError || vStatus === 'error' ? 'bg-red-50 border-red-200'
+              : vStatus === 'review' ? 'bg-amber-50 border-amber-200'
+              : vStatus === 'fixed' ? 'bg-blue-50 border-blue-200'
+              : vStatus === 'ok' ? 'bg-green-50 border-green-200'
+              : 'bg-gray-50 border-gray-200'
+            }`}>
+              {verifying && (
+                <div className="flex items-center gap-3 text-gray-700">
+                  <div className="animate-spin w-4 h-4 border-2 border-gray-700 border-t-transparent rounded-full" />
+                  <span>Verificando que cada dato de la propuesta tenga respaldo antes de que puedas enviarla…</span>
+                  {verifyStuck && (
+                    <button onClick={() => runVerification(true)} className="ml-auto text-xs underline">Reintentar</button>
+                  )}
+                </div>
+              )}
+              {(verifyError || vStatus === 'error') && (
+                <div className="flex items-center gap-3 text-red-700">
+                  <span>No pudimos verificar la propuesta automáticamente. Revísala con cuidado antes de enviar.</span>
+                  <button onClick={() => runVerification(true)} className="ml-auto text-xs underline whitespace-nowrap">Reintentar verificación</button>
+                </div>
+              )}
+              {vStatus === 'ok' && (
+                <p className="text-green-800 font-medium">Verificada: no encontramos datos sin respaldo en tu información, las notas ni las fuentes.</p>
+              )}
+              {(vStatus === 'fixed' || vStatus === 'review') && proposal.verification && (
+                <div className="space-y-3">
+                  {proposal.verification.changes.length > 0 && (
+                    <div>
+                      <p className="font-medium text-gray-900">
+                        Ajustamos {proposal.verification.changes.length} {proposal.verification.changes.length === 1 ? 'afirmación' : 'afirmaciones'} que no tenían respaldo
+                      </p>
+                      <ul className="mt-2 space-y-2">
+                        {proposal.verification.changes.map((c, i) => (
+                          <li key={i} className="text-xs text-gray-600">
+                            <span className="line-through text-gray-400">{c.before}</span>
+                            {c.after ? <span className="block text-gray-800">→ {c.after}</span> : <span className="block text-gray-800">→ (se eliminó)</span>}
+                            <span className="block text-gray-500">{c.problem}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  {proposal.verification.review.length > 0 && (
+                    <div>
+                      <p className="font-medium text-amber-900">Revisa esto antes de enviar</p>
+                      <ul className="mt-2 space-y-2">
+                        {proposal.verification.review.map((r, i) => (
+                          <li key={i} className="text-xs text-gray-700">
+                            <span className="block">&ldquo;{r.quote}&rdquo;</span>
+                            <span className="block text-gray-500">{r.problem}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Proposal text editor */}
           <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-3">
             <div className="flex items-center justify-between">
@@ -476,10 +577,10 @@ export default function ProposalPage() {
               {sendError && <p className="text-sm text-red-600">{sendError}</p>}
               <button
                 onClick={handleSend}
-                disabled={sending}
+                disabled={sending || verifying}
                 className="w-full bg-gray-900 text-white py-3 rounded-xl text-sm font-medium hover:bg-gray-800 disabled:opacity-50"
               >
-                {sending ? 'Enviando...' : `Aprobar y enviar a ${proposal.prospect_email}`}
+                {sending ? 'Enviando...' : verifying ? 'Verificando…' : `Aprobar y enviar a ${proposal.prospect_email}`}
               </button>
             </div>
           )}
