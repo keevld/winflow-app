@@ -16,14 +16,12 @@ export default function ProposalPage() {
   const [proposal, setProposal] = useState<Proposal | null>(null)
   const [emailHtml, setEmailHtml] = useState('')
   const [proposalText, setProposalText] = useState('')
-  const [pdfSignedUrl, setPdfSignedUrl] = useState<string | null>(null)
+  const [previewKey, setPreviewKey] = useState(0)
   const [sending, setSending] = useState(false)
   const [timedOut, setTimedOut] = useState(false)
   const [sendError, setSendError] = useState('')
   const [savingText, setSavingText] = useState(false)
   const [textSaveMsg, setTextSaveMsg] = useState('')
-  const [regenerating, setRegenerating] = useState(false)
-  const [regenerateError, setRegenerateError] = useState('')
   const [outcomeSaving, setOutcomeSaving] = useState(false)
   const [outcomeError, setOutcomeError] = useState('')
   const [lostReason, setLostReason] = useState('')
@@ -33,16 +31,6 @@ export default function ProposalPage() {
   const [verifyError, setVerifyError] = useState('')
   const [verifyStuck, setVerifyStuck] = useState(false)
   const [verifyRun, setVerifyRun] = useState(0)
-
-  const refreshPdfUrl = useCallback(async () => {
-    const res = await fetch(`/api/proposals/${id}/pdf-url`)
-    if (res.ok) {
-      const body = await res.json()
-      setPdfSignedUrl(body.url)
-    } else {
-      setPdfSignedUrl(null)
-    }
-  }, [id])
 
   useEffect(() => {
     const supabase = createClient()
@@ -62,7 +50,6 @@ export default function ProposalPage() {
         setProposal(data)
         setEmailHtml(data.email_html ?? '')
         setProposalText(data.proposal_text ?? '')
-        if (data.pdf_url) refreshPdfUrl()
         if (data.status === 'generating' && !data.pdf_url) {
           // Start 45s timeout
           timerRef.current = setTimeout(async () => {
@@ -90,11 +77,6 @@ export default function ProposalPage() {
           setProposal(updated)
           setEmailHtml(updated.email_html ?? '')
           setProposalText(updated.proposal_text ?? '')
-          if (updated.pdf_url) {
-            refreshPdfUrl()
-          } else {
-            setPdfSignedUrl(null)
-          }
           if (updated.pdf_url && timerRef.current) {
             clearTimeout(timerRef.current)
             setTimedOut(false)
@@ -107,7 +89,7 @@ export default function ProposalPage() {
       supabase.removeChannel(channel)
       if (timerRef.current) clearTimeout(timerRef.current)
     }
-  }, [id, refreshPdfUrl])
+  }, [id])
 
   // Verificador de afirmaciones: corre solo, una vez, cuando la propuesta inicial queda lista.
   const runVerification = useCallback(async (force = false) => {
@@ -152,10 +134,10 @@ export default function ProposalPage() {
       setProposal(data)
       setEmailHtml(data.email_html ?? '')
       setProposalText(data.proposal_text ?? '')
-      if (data.pdf_url) { refreshPdfUrl(); setTimedOut(false) }
+      if (data.pdf_url) setTimedOut(false)
     }, 4000)
     return () => clearInterval(t)
-  }, [st, vs, id, refreshPdfUrl])
+  }, [st, vs, id])
 
   async function handleRetry() {
     if (!proposal) return
@@ -184,7 +166,6 @@ export default function ProposalPage() {
       return
     }
     setProposal(p => p ? { ...p, status: 'generating', pdf_url: null } : p)
-    setPdfSignedUrl(null)
     const supabase = createClient()
     timerRef.current = setTimeout(async () => {
       setTimedOut(true)
@@ -207,41 +188,12 @@ export default function ProposalPage() {
         throw new Error(body.error ?? 'No se pudo guardar')
       }
       setProposal(p => p ? { ...p, proposal_text: proposalText } : p)
-      setTextSaveMsg('Guardado. Regenera el PDF para reflejar los cambios.')
+      setTextSaveMsg('Guardado. La vista previa ya muestra los cambios.')
+      setPreviewKey(k => k + 1)
     } catch (err: unknown) {
       setTextSaveMsg(err instanceof Error ? err.message : 'Error desconocido')
     } finally {
       setSavingText(false)
-    }
-  }
-
-  async function handleRegeneratePdf() {
-    if (!proposal) return
-    setRegenerateError('')
-    setRegenerating(true)
-    try {
-      const res = await fetch(`/api/proposals/${id}/regenerate-pdf`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ proposal_text: proposalText }),
-      })
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({}))
-        throw new Error(body.error ?? 'No se pudo regenerar el PDF')
-      }
-      setTextSaveMsg('')
-      setProposal(p => p ? { ...p, status: 'generating', pdf_url: null, proposal_text: proposalText } : p)
-      setPdfSignedUrl(null)
-      const supabase = createClient()
-      timerRef.current = setTimeout(async () => {
-        setTimedOut(true)
-        await supabase.from('proposals').update({ status: 'failed' }).eq('id', id).eq('status', 'generating').is('pdf_url', null)
-        setProposal(p => p && !p.pdf_url ? { ...p, status: 'failed' } : p)
-      }, TIMEOUT_MS)
-    } catch (err: unknown) {
-      setRegenerateError(err instanceof Error ? err.message : 'Error desconocido')
-    } finally {
-      setRegenerating(false)
     }
   }
 
@@ -521,17 +473,9 @@ export default function ProposalPage() {
                   disabled={savingText || proposalText === (proposal.proposal_text ?? '')}
                   className="text-sm px-4 py-2 rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-50"
                 >
-                  {savingText ? 'Guardando...' : 'Guardar texto'}
-                </button>
-                <button
-                  onClick={handleRegeneratePdf}
-                  disabled={regenerating}
-                  className="text-sm px-4 py-2 rounded-lg bg-gray-900 text-white hover:bg-gray-800 disabled:opacity-50"
-                >
-                  {regenerating ? 'Regenerando...' : 'Regenerar PDF con este texto'}
+                  {savingText ? 'Guardando...' : 'Guardar cambios'}
                 </button>
                 {textSaveMsg && <span className="text-xs text-gray-500">{textSaveMsg}</span>}
-                {regenerateError && <span className="text-xs text-red-600">{regenerateError}</span>}
               </div>
             )}
           </div>
@@ -581,21 +525,20 @@ export default function ProposalPage() {
             )}
           </div>
 
-          {/* PDF preview */}
-          {pdfSignedUrl && (
+          {/* Vista previa: la propuesta tal como la verá el cliente (y como saldrá en el PDF) */}
+          {proposal.public_slug && (
             <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-              <div className="px-5 py-3 border-b border-gray-100 flex items-center justify-between">
-                <h2 className="text-sm font-semibold text-gray-700">Propuesta PDF</h2>
-                <a
-                  href={pdfSignedUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-xs text-gray-500 hover:text-gray-900 underline"
-                >
-                  Abrir en nueva pestaña
-                </a>
+              <div className="px-5 py-3 border-b border-gray-100 flex items-center justify-between gap-3">
+                <div>
+                  <h2 className="text-sm font-semibold text-gray-700">Así la verá tu cliente</h2>
+                  <p className="text-xs text-gray-400">Se actualiza cuando guardas cambios en el texto. El PDF adjunto sale de esta misma vista.</p>
+                </div>
+                <div className="flex items-center gap-4 shrink-0">
+                  <a href={`/p/${proposal.public_slug}?preview=1`} target="_blank" rel="noopener noreferrer" className="text-xs text-gray-500 hover:text-gray-900 underline">Abrir en nueva pestaña</a>
+                  <a href={`/api/public/proposals/${proposal.public_slug}/pdf`} className="text-xs text-gray-500 hover:text-gray-900 underline">Descargar PDF</a>
+                </div>
               </div>
-              <iframe src={pdfSignedUrl} className="w-full h-[600px]" />
+              <iframe key={previewKey} title="Vista previa de la propuesta" src={`/p/${proposal.public_slug}?preview=1`} className="w-full h-[720px]" />
             </div>
           )}
 
@@ -603,12 +546,13 @@ export default function ProposalPage() {
           {!isSent && (
             <div className="flex flex-col gap-2">
               {sendError && <p className="text-sm text-red-600">{sendError}</p>}
+              {sending && <p className="text-xs text-gray-500 text-center">Estamos generando el PDF y enviando el correo. No cierres esta página hasta que te lleve al panel.</p>}
               <button
                 onClick={handleSend}
                 disabled={sending || verifying}
                 className="w-full bg-gray-900 text-white py-3 rounded-xl text-sm font-medium hover:bg-gray-800 disabled:opacity-50"
               >
-                {sending ? 'Enviando...' : verifying ? 'Verificando…' : `Aprobar y enviar a ${proposal.prospect_email}`}
+                {sending ? 'Enviando… puede tardar hasta 1 minuto' : verifying ? 'Verificando…' : `Aprobar y enviar a ${proposal.prospect_email}`}
               </button>
             </div>
           )}

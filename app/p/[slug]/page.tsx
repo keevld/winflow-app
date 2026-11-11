@@ -46,7 +46,7 @@ export default async function PublicProposalPage({
   }
 
   const [{ data: agency }, { data: brand }] = await Promise.all([
-    supabase.from('clients').select('company_name, booking_url, calendly_url').eq('id', proposal.client_id).maybeSingle(),
+    supabase.from('clients').select('company_name, booking_url, calendly_url, contact_name, contact_email, contact_phone').eq('id', proposal.client_id).maybeSingle(),
     supabase.from('brand_voice').select('primary_color, logo_base64, about_agency').eq('client_id', proposal.client_id).maybeSingle(),
   ])
   const HEX = /^#[0-9a-fA-F]{6}$/
@@ -118,6 +118,7 @@ export default async function PublicProposalPage({
           product={proposal.product ?? ''}
           issuedAt={proposal.sent_at ?? proposal.created_at ?? null}
           bookingUrl={bookingUrl}
+          contact={{ name: agency?.contact_name ?? null, email: agency?.contact_email ?? null, phone: agency?.contact_phone ?? null }}
           preview={isPreview}
           pdfHref={process.env.PDFSHIFT_API_KEY && !isPrint ? `/api/public/proposals/${slug}/pdf` : null}
         />

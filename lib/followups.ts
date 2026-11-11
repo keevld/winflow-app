@@ -269,7 +269,16 @@ export async function runFollowups(
 
     const ag = await loadAgencyPublic(service, cad.clientId)
 
+    // Si ya se envió una propuesta más nueva derivada de esta (p. ej. la comercial después de la inicial),
+    // la anterior deja de recibir seguimientos: el prospecto no debe recibir dos hilos a la vez.
+    const { data: kids } = await service
+      .from('proposals').select('parent_proposal_id')
+      .in('parent_proposal_id', props.map(x => x.id as string))
+      .eq('status', 'sent')
+    const superseded = new Set((kids ?? []).map(k => k.parent_proposal_id as string))
+
     for (const p of props) {
+      if (superseded.has(p.id as string)) continue
       if (results.filter(r => r.status === 'sent' || r.status === 'dry').length >= MAX_PER_RUN) return { checked, results }
       checked++
       const to = (p.prospect_email ?? '').trim()

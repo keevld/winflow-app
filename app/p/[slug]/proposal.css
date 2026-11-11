@@ -490,7 +490,14 @@
 .pd-metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-top: 12px; }
 .pd-metric { display: flex; flex-direction: column; gap: 4px; padding: 22px 24px; border-radius: 16px; background: var(--tint); }
 .pd-metric-v { font-family: var(--serif); font-size: clamp(40px, 5vw, 56px); line-height: 1; letter-spacing: -0.03em; color: var(--brand-ink); font-variation-settings: 'opsz' 72; }
+.pd-metric { min-width: 0; }
+.pd-metric-v { overflow-wrap: anywhere; }
+.pd-metric-v--long { font-size: clamp(28px, 3.4vw, 40px); }
 .pd-metric-l { font-size: 14px; color: var(--muted); }
+.pd-contact { margin-top: 36px; padding-top: 20px; border-top: 1px solid var(--line, #e5e1d8); }
+.pd-contact h2 { font-size: 15px; margin: 0 0 6px; }
+.pd-contact p { font-size: 15px; color: var(--muted); }
+.pd-contact a { color: var(--brand-ink); text-decoration: none; border-bottom: 1px solid currentColor; }
 .pd-closing {
   margin-top: clamp(24px, 4vw, 48px);
   padding: clamp(28px, 4vw, 48px);

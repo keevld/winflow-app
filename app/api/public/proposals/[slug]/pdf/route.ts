@@ -30,11 +30,11 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
       .eq('proposal_id', p.id)
       .order('position'),
     sb.from('brand_voice').select('primary_color, logo_base64, about_agency').eq('client_id', p.client_id).maybeSingle(),
-    sb.from('clients').select('company_name').eq('id', p.client_id).maybeSingle(),
+    sb.from('clients').select('company_name, booking_url, calendly_url, contact_name, contact_email, contact_phone').eq('id', p.client_id).maybeSingle(),
   ])
 
   const hash = createHash('sha1')
-    .update(JSON.stringify([p.commercial, p.proposal_text, p.valid_until, items, brand, agency, 'v3']))
+    .update(JSON.stringify([p.commercial, p.proposal_text, p.valid_until, items, brand, agency, 'v4']))
     .digest('hex')
     .slice(0, 16)
   const path = `commercial-pdf/${p.id}/${hash}.pdf`

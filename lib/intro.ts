@@ -13,6 +13,18 @@ export interface IntroParsed {
 
 const BULLET = /^\s*[-•—–]\s*/
 
+// "12 publicaciones/mes|Publicaciones mensuales" → cifra corta "12" + etiqueta; así nunca desborda la tarjeta.
+function splitMetric(rawValue: string, rawLabel: string): { value: string; label: string } {
+  const m = rawValue.match(/^([$€£]?\s?\d[\d.,]*\s?(?:%|x|[kKmM]\b|MXN|USD|EUR|COP|ARS|CLP|PEN)?)\s*(.*)$/)
+  if (!m || !m[2]) return { value: rawValue, label: rawLabel }
+  const value = m[1].trim()
+  const rest = m[2].replace(/^\/\s*/, '').trim()
+  if (!rest || m[2].trim().startsWith('/')) return { value, label: rawLabel }
+  const firstWord = rest.toLowerCase().split(/[\s/]/)[0].slice(0, 6)
+  const label = rawLabel.toLowerCase().includes(firstWord) ? rawLabel : `${rest.charAt(0).toUpperCase()}${rest.slice(1)} · ${rawLabel}`
+  return { value, label }
+}
+
 export function parseIntroText(raw: string, bookingUrl: string | null): IntroParsed {
   const [bodyRaw, metricsRaw] = (raw ?? '').split('---METRICAS---')
 
@@ -22,7 +34,7 @@ export function parseIntroText(raw: string, bookingUrl: string | null): IntroPar
     .slice(0, 3)
     .map(l => {
       const [v, ...rest] = l.split('|')
-      return { value: v.trim(), label: humanize(rest.join('|').trim()) }
+      return splitMetric(v.trim(), humanize(rest.join('|').trim()))
     })
     .filter(m => m.value && m.label && m.value !== '—')
 

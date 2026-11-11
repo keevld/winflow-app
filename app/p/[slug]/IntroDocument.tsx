@@ -18,6 +18,7 @@ export interface IntroDocumentProps {
   product: string
   issuedAt: string | null
   bookingUrl: string | null
+  contact?: { name: string | null; email: string | null; phone: string | null }
   preview: boolean
   pdfHref: string | null
 }
@@ -105,11 +106,11 @@ export default function IntroDocument(p: IntroDocumentProps) {
 
         {parsed.metrics.length > 0 && (
           <section className="pd-section pd-section--wide">
-            <h2>Resultados que hemos logrado</h2>
+            <h2>La propuesta en números</h2>
             <div className="pd-metrics">
               {parsed.metrics.map((m, i) => (
                 <div key={i} className="pd-metric">
-                  <span className="pd-metric-v num">{m.value}</span>
+                  <span className={`pd-metric-v num${m.value.length > 7 ? ' pd-metric-v--long' : ''}`}>{m.value}</span>
                   <span className="pd-metric-l">{m.label}</span>
                 </div>
               ))}
@@ -121,6 +122,17 @@ export default function IntroDocument(p: IntroDocumentProps) {
           <section className="pd-closing">
             {parsed.closing && <p>{inline(parsed.closing)}</p>}
             {cta && <div className="pd-closing-cta">{cta}</div>}
+          </section>
+        )}
+
+        {(p.contact?.email || p.contact?.phone) && (
+          <section className="pd-contact">
+            <h2>{p.contact.name ? `Habla con ${p.contact.name}` : 'Contacto'}</h2>
+            <p>
+              {p.contact.email && <a href={`mailto:${p.contact.email}`}>{p.contact.email}</a>}
+              {p.contact.email && p.contact.phone && <span aria-hidden> · </span>}
+              {p.contact.phone && <a href={`tel:${p.contact.phone.replace(/[^+\d]/g, '')}`}>{p.contact.phone}</a>}
+            </p>
           </section>
         )}
 

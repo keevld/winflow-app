@@ -57,48 +57,6 @@ export async function POST(
       ...(changed ? { proposal_text: text, ...(emailHtml !== null ? { email_html: emailHtml } : {}) } : {}),
     }).eq('id', id).eq('client_id', profile.client_id)
 
-    // Si se reescribió algo, el PDF debe reflejarlo antes de poder enviarse.
-    if (changed) {
-      const webhookUrl = process.env.WINFLOW_WEBHOOK_REGENERATE
-      const secret = process.env.WINFLOW_WEBHOOK_SECRET
-      if (webhookUrl && secret) {
-        const previousPdfUrl = proposal.pdf_url
-        const { data: reclaimed } = await service.from('proposals')
-          .update({ status: 'generating', pdf_url: null, generation_started_at: new Date().toISOString() })
-          .eq('id', id).eq('client_id', profile.client_id).eq('status', 'ready')
-          .select('id').maybeSingle()
-        if (reclaimed) {
-          try {
-            const n8nRes = await fetch(webhookUrl, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json', 'X-Winflow-Secret': secret },
-              body: JSON.stringify({
-                proposal_id: id,
-                client_id: profile.client_id,
-                auto_send: false,
-                manual_proposal_text: text,
-                prospect_name: proposal.prospect_name,
-                prospect_email: proposal.prospect_email,
-                prospect_company: proposal.prospect_company,
-                prospect_industry: proposal.prospect_industry,
-                prospect_website: proposal.prospect_website,
-                prospect_pain: proposal.prospect_pain,
-                product: proposal.product,
-              }),
-              signal: AbortSignal.timeout(12_000),
-            })
-            if (!n8nRes.ok) {
-              await service.from('proposals').update({ status: 'ready', pdf_url: previousPdfUrl }).eq('id', id).eq('client_id', profile.client_id)
-            }
-          } catch (err) {
-            // Si solo venció la espera, n8n sigue regenerando el PDF.
-            if (!(err instanceof Error && (err.name === 'TimeoutError' || err.name === 'AbortError'))) {
-              await service.from('proposals').update({ status: 'ready', pdf_url: previousPdfUrl }).eq('id', id).eq('client_id', profile.client_id)
-            }
-          }
-        }
-      }
-    }
     return NextResponse.json({ ok: true, status: report.status, changes: report.changes.length, review: report.review.length })
   } catch {
     await service.from('proposals').update({
