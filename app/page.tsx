@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import type { Metadata } from 'next'
 import { createClient } from '@/lib/supabase/server'
 import PilotForm from './_landing/PilotForm'
+import DemoVideo from './_landing/DemoVideo'
 import './_landing/landing.css'
 
 export const metadata: Metadata = {
@@ -20,6 +21,10 @@ export const metadata: Metadata = {
 const SAMPLE_INTRO = '/p/ORyB2vrT1rpuFLiq'
 const SAMPLE_COMMERCIAL = '/p/7lhz-WfMDkUEW5wK'
 
+// Video corto del proceso. Pega aquí la URL (un .mp4 público o un enlace de YouTube) y la sección cambia sola.
+// Mientras esté vacío, se muestran las dos propuestas de ejemplo.
+const DEMO_VIDEO: string = ''
+
 export default async function Home() {
   // Quien ya inició sesión entra directo a su panel.
   const sb = await createClient()
@@ -34,7 +39,7 @@ export default async function Home() {
         <a className="lp-logo" href="/">Winflow</a>
         <nav>
           <a href="#como">Cómo funciona</a>
-          <a href="#ejemplo">Ejemplo</a>
+          <a href="#ejemplo">{DEMO_VIDEO ? 'Video' : 'Ejemplo'}</a>
           <a href="#piloto">Piloto fundador</a>
           <a className="lp-btn lp-btn-small" href="#solicitar">Solicitar piloto</a>
         </nav>
@@ -45,8 +50,8 @@ export default async function Home() {
           <p className="lp-eyebrow">Para agencias pequeñas de LATAM</p>
           <h1>Propuestas que tu prospecto sí lee, y un seguimiento que no se te olvida.</h1>
           <p className="lp-lead">
-            Winflow convierte lo que te contó el prospecto en una propuesta hecha para él, con precios claros y una página propia,
-            y le da seguimiento por ti hasta que responda. Tú revisas y das clic en enviar.
+            Winflow aprende cómo habla tu agencia y convierte lo que te contó el prospecto en una propuesta hecha para él, con tu marca, tu tono y
+            precios claros, y le da seguimiento por ti hasta que responda. Tú revisas y das clic en enviar.
           </p>
           <div className="lp-cta">
             <a className="lp-btn lp-btn-primary" href="#solicitar">Solicitar piloto</a>
@@ -79,19 +84,29 @@ export default async function Home() {
             <li>
               <span className="lp-step-n">1</span>
               <div>
-                <h3>Cuentas el caso</h3>
-                <p>Datos del prospecto, las notas o la transcripción de la llamada y, si quieres, su sitio web. Winflow lee todo eso.</p>
+                <h3>Configuras tu agencia, una sola vez</h3>
+                <p>
+                  Subes tu logo y tus colores, defines tu tono de voz y cargas tus servicios, precios, casos de éxito y ejemplos de cómo escribes.
+                  Eso es lo que hace que cada propuesta suene a ti y no a una plantilla de IA.
+                </p>
               </div>
             </li>
             <li>
               <span className="lp-step-n">2</span>
               <div>
-                <h3>Winflow redacta con tu voz</h3>
-                <p>Una propuesta inicial y una propuesta comercial con opciones de precio, con tu marca, tus servicios y tus casos de éxito.</p>
+                <h3>Cuentas el caso</h3>
+                <p>Datos del prospecto, las notas o la transcripción de la llamada y, si quieres, su sitio web. Winflow lee todo eso.</p>
               </div>
             </li>
             <li>
               <span className="lp-step-n">3</span>
+              <div>
+                <h3>Winflow redacta con tu voz</h3>
+                <p>Una propuesta inicial y una propuesta comercial con opciones de precio, con tu marca y tus casos, y cada afirmación se verifica antes de enviarla.</p>
+              </div>
+            </li>
+            <li>
+              <span className="lp-step-n">4</span>
               <div>
                 <h3>Envías y das seguimiento</h3>
                 <p>El prospecto recibe una página y un PDF. Tú ves cuándo la abre, y los seguimientos salen solos con el ritmo que elijas.</p>
@@ -135,23 +150,37 @@ export default async function Home() {
         </section>
 
         <section className="lp-section" id="ejemplo">
-          <h2>Mira cómo se ve</h2>
-          <p className="lp-sub">
-            Estas dos propuestas las generó Winflow para <strong>Estudio Brújula</strong>, una agencia de ejemplo (no es una agencia real),
-            para un prospecto de ejemplo.
-          </p>
-          <div className="lp-grid lp-grid-2">
-            <a className="lp-card lp-link-card" href={SAMPLE_INTRO} target="_blank" rel="noopener">
-              <h3>Propuesta inicial</h3>
-              <p>El diagnóstico y la propuesta de valor, escritos para ese prospecto.</p>
-              <span>Abrir ejemplo →</span>
-            </a>
-            <a className="lp-card lp-link-card" href={SAMPLE_COMMERCIAL} target="_blank" rel="noopener">
-              <h3>Propuesta comercial</h3>
-              <p>Opciones de precio, alcance y condiciones, con aceptación en línea.</p>
-              <span>Abrir ejemplo →</span>
-            </a>
-          </div>
+          {DEMO_VIDEO ? (
+            <>
+              <h2>Míralo en acción</h2>
+              <DemoVideo src={DEMO_VIDEO} />
+              <p className="lp-sub lp-sub-after">
+                ¿Prefieres leer una propuesta real? Estas dos las generó Winflow para <strong>Estudio Brújula</strong>, una agencia de ejemplo (no es una agencia real):{' '}
+                <a href={SAMPLE_INTRO} target="_blank" rel="noopener">propuesta inicial</a> y{' '}
+                <a href={SAMPLE_COMMERCIAL} target="_blank" rel="noopener">propuesta comercial</a>.
+              </p>
+            </>
+          ) : (
+            <>
+              <h2>Mira cómo se ve</h2>
+              <p className="lp-sub">
+                Estas dos propuestas las generó Winflow para <strong>Estudio Brújula</strong>, una agencia de ejemplo (no es una agencia real),
+                para un prospecto de ejemplo.
+              </p>
+              <div className="lp-grid lp-grid-2">
+                <a className="lp-card lp-link-card" href={SAMPLE_INTRO} target="_blank" rel="noopener">
+                  <h3>Propuesta inicial</h3>
+                  <p>El diagnóstico y la propuesta de valor, escritos para ese prospecto.</p>
+                  <span>Abrir ejemplo →</span>
+                </a>
+                <a className="lp-card lp-link-card" href={SAMPLE_COMMERCIAL} target="_blank" rel="noopener">
+                  <h3>Propuesta comercial</h3>
+                  <p>Opciones de precio, alcance y condiciones, con aceptación en línea.</p>
+                  <span>Abrir ejemplo →</span>
+                </a>
+              </div>
+            </>
+          )}
         </section>
 
         <section className="lp-section lp-pilot" id="piloto">
