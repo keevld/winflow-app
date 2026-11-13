@@ -11,7 +11,7 @@ import {
 
 const STAGE_BADGE: Record<Stage, string> = {
   prep: 'bg-yellow-100 text-yellow-800',
-  sent: 'bg-blue-100 text-blue-800',
+  sent: 'bg-[#e3eef2] text-[#1d4c63]',
   viewed: 'bg-emerald-50 text-emerald-700',
   won: 'bg-emerald-600 text-white',
   lost: 'bg-gray-700 text-white',
@@ -35,7 +35,7 @@ function Sparkline({ values, color, label }: { values: number[]; color: string; 
     <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-9" role="img" aria-label={label} preserveAspectRatio="none">
       <polygon points={area} fill={color} opacity="0.15" />
       <polyline points={line} fill="none" stroke={color} strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
-      <circle cx={lx} cy={ly} r="3.5" fill={color} stroke="#0f172a" strokeWidth="2" />
+      <circle cx={lx} cy={ly} r="3.5" fill={color} stroke="#0f2a37" strokeWidth="2" />
     </svg>
   )
 }
@@ -52,9 +52,9 @@ function Delta({ now, before }: { now: number; before: number }) {
 
 function BoardTile({ label, value, children, tone }: { label: string; value: string; children?: React.ReactNode; tone?: 'warn' }) {
   return (
-    <div className="rounded-xl bg-white/5 ring-1 ring-white/10 p-4 flex flex-col">
+    <div className="rounded-2xl bg-white/[0.07] ring-1 ring-white/10 p-4 flex flex-col backdrop-blur-sm">
       <p className="text-xs font-medium uppercase tracking-wide text-slate-400">{label}</p>
-      <p className={`text-4xl font-semibold tabular-nums mt-2 ${tone === 'warn' ? 'text-amber-300' : 'text-white'}`}>{value}</p>
+      <p className={`font-display text-4xl font-semibold tabular-nums mt-2 ${tone === 'warn' ? 'text-amber-300' : 'text-white'}`}>{value}</p>
       <div className="mt-auto pt-3 text-xs text-slate-300 space-y-2">{children}</div>
     </div>
   )
@@ -128,13 +128,13 @@ export default function DashboardClient({ rows }: { rows: DashRow[] }) {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold text-gray-900">Propuestas</h1>
-        <div className="flex items-center gap-2">
-          <Link href="/proposals/commercial/new" className="bg-white text-gray-900 text-sm px-4 py-2 rounded-lg border border-gray-300 hover:bg-gray-50">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h1 className="text-2xl font-semibold text-gray-900">Propuestas</h1>
+        <div className="flex flex-wrap items-center gap-2 whitespace-nowrap">
+          <Link href="/proposals/commercial/new" className="bg-white text-gray-900 text-sm font-medium px-4 py-2 rounded-full border border-gray-300 hover:border-gray-500">
             + Propuesta comercial
           </Link>
-          <Link href="/proposals/new" className="bg-gray-900 text-white text-sm px-4 py-2 rounded-lg hover:bg-gray-800">
+          <Link href="/proposals/new" className="bg-gray-900 text-white text-sm font-medium px-4 py-2 rounded-full hover:bg-gray-800">
             + Nueva propuesta
           </Link>
         </div>
@@ -142,10 +142,10 @@ export default function DashboardClient({ rows }: { rows: DashRow[] }) {
 
       {rows.length > 0 && (
         <>
-          <section className="rounded-2xl bg-slate-900 p-5 shadow-sm">
+          <section className="wf-board rounded-3xl bg-slate-900 p-5 sm:p-6 shadow-lg shadow-gray-900/10">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h2 className="text-sm font-semibold text-white">Resumen del equipo</h2>
+                <h2 className="text-base font-semibold text-white">Resumen del equipo</h2>
                 <p className="text-xs text-slate-400 mt-0.5">Cierres y envíos: {periodLabel}</p>
               </div>
               <div className="flex gap-1 rounded-lg bg-white/5 p-1">
@@ -162,14 +162,14 @@ export default function DashboardClient({ rows }: { rows: DashRow[] }) {
               <BoardTile label="En seguimiento" value={String(s.open.length)}>
                 <p>{Object.keys(s.openValue).length ? `${formatCompactTotals(s.openValue)} en juego` : 'enviadas sin cerrar'}</p>
                 {period !== 0 && <p><span className="text-slate-200">{s.sentCur.length} enviadas</span> · <Delta now={s.sentCur.length} before={s.sentPrev.length} /></p>}
-                <Sparkline values={s.weeksSent.map(w => w.count)} color="#a5b4fc" label="Propuestas enviadas por semana, últimas 8 semanas" />
+                <Sparkline values={s.weeksSent.map(w => w.count)} color="#f3a39d" label="Propuestas enviadas por semana, últimas 8 semanas" />
               </BoardTile>
 
               <BoardTile label="Ganadas" value={String(s.wonCur.length)}>
                 <p>{Object.keys(s.wonValue).length ? formatCompactTotals(s.wonValue) : 'sin monto registrado'}</p>
                 {period !== 0 && <p><Delta now={s.wonCur.length} before={s.wonPrev.length} /></p>}
                 {s.weeksWon.some(w => w.count > 0)
-                  ? <Sparkline values={s.weeksWon.map(w => w.count)} color="#6ee7b7" label="Propuestas ganadas por semana, últimas 8 semanas" />
+                  ? <Sparkline values={s.weeksWon.map(w => w.count)} color="#8fc0ac" label="Propuestas ganadas por semana, últimas 8 semanas" />
                   : <p className="h-9 flex items-end text-slate-500">Tu primer cierre aparecerá aquí</p>}
               </BoardTile>
 
@@ -197,14 +197,14 @@ export default function DashboardClient({ rows }: { rows: DashRow[] }) {
           </section>
 
           <div className="grid lg:grid-cols-3 gap-3">
-            <div className="bg-white rounded-xl border border-gray-200 p-5">
+            <div className="bg-white rounded-2xl border border-gray-200 p-5">
               <h2 className="text-sm font-semibold text-gray-900">Envíos por semana</h2>
               <p className="text-xs text-gray-400 mt-0.5 mb-4">Últimas 8 semanas</p>
               <div className="flex items-end gap-2 h-28">
                 {s.weeksSent.map(w => (
                   <div key={w.start} className="flex-1 flex flex-col items-center justify-end h-full" title={`Semana del ${new Date(w.start).toLocaleDateString('es-MX', { day: 'numeric', month: 'short' })}: ${w.count}`}>
                     <span className="text-xs text-gray-700 tabular-nums mb-1">{w.count || ''}</span>
-                    <div className="w-full bg-indigo-600" style={{ height: `${Math.max(w.count ? 6 : 2, (w.count / maxWeek) * 80)}%`, borderRadius: '4px 4px 0 0', opacity: w.count ? 1 : 0.2 }} />
+                    <div className="w-full bg-brand-teal" style={{ height: `${Math.max(w.count ? 6 : 2, (w.count / maxWeek) * 80)}%`, borderRadius: '4px 4px 0 0', opacity: w.count ? 1 : 0.2 }} />
                   </div>
                 ))}
               </div>
@@ -217,7 +217,7 @@ export default function DashboardClient({ rows }: { rows: DashRow[] }) {
               </div>
             </div>
 
-            <div className="bg-white rounded-xl border border-gray-200 p-5">
+            <div className="bg-white rounded-2xl border border-gray-200 p-5">
               <h2 className="text-sm font-semibold text-gray-900">Embudo</h2>
               <p className="text-xs text-gray-400 mt-0.5 mb-4">Acumulado: cada etapa incluye las siguientes</p>
               <div className="space-y-4">
@@ -228,14 +228,14 @@ export default function DashboardClient({ rows }: { rows: DashRow[] }) {
                       <span className="text-gray-900 font-medium tabular-nums">{f.n} · {pct(f.n, funnel[0].n)}</span>
                     </div>
                     <div className="h-2.5 rounded-full bg-gray-100">
-                      <div className="h-2.5 rounded-full bg-indigo-600" style={{ width: funnel[0].n ? `${Math.max(2, (f.n / funnel[0].n) * 100)}%` : '0%' }} />
+                      <div className="h-2.5 rounded-full bg-brand-teal" style={{ width: funnel[0].n ? `${Math.max(2, (f.n / funnel[0].n) * 100)}%` : '0%' }} />
                     </div>
                   </div>
                 ))}
               </div>
             </div>
 
-            <div className="bg-white rounded-xl border border-gray-200 p-5">
+            <div className="bg-white rounded-2xl border border-gray-200 p-5">
               <h2 className="text-sm font-semibold text-gray-900">Toca dar seguimiento</h2>
               <p className="text-xs text-gray-400 mt-0.5 mb-3">Frías o por vencer</p>
               {s.followUp.length === 0 ? (
@@ -277,20 +277,21 @@ export default function DashboardClient({ rows }: { rows: DashRow[] }) {
           <option value="intro">Iniciales</option>
           <option value="commercial">Comerciales</option>
         </select>
-        <input value={q} onChange={e => setQ(e.target.value)} placeholder="Buscar empresa, persona o servicio" className="text-sm border border-gray-300 rounded-lg px-3 py-1.5 w-64 focus:outline-none focus:ring-2 focus:ring-gray-900" />
+        <input value={q} onChange={e => setQ(e.target.value)} placeholder="Buscar empresa, persona o servicio" className="text-sm border border-gray-300 rounded-lg px-3 py-1.5 w-full sm:w-64 bg-white focus:outline-none focus:ring-2 focus:ring-gray-900" />
       </div>
 
       {rows.length === 0 ? (
-        <div className="text-center py-20 text-gray-400">
-          <p className="text-sm">No hay propuestas todavía.</p>
-          <Link href="/proposals/new" className="text-sm text-gray-900 underline mt-2 inline-block">Crear la primera</Link>
+        <div className="rounded-3xl border border-dashed border-gray-300 bg-white px-6 py-16 text-center">
+          <h2 className="text-lg font-semibold text-gray-900">Aún no hay propuestas</h2>
+          <p className="mt-1 text-sm text-gray-500">Crea la primera con los datos de tu prospecto y las notas de la llamada.</p>
+          <Link href="/proposals/new" className="mt-5 inline-block rounded-full bg-gray-900 px-5 py-2.5 text-sm font-medium text-white hover:bg-gray-800">+ Nueva propuesta</Link>
         </div>
       ) : filtered.length === 0 ? (
         <p className="text-sm text-gray-400 text-center py-10">Ninguna propuesta coincide con el filtro.</p>
       ) : (
-        <div className="bg-white rounded-xl border border-gray-200 divide-y divide-gray-100">
+        <div className="bg-white rounded-2xl border border-gray-200 divide-y divide-gray-100 overflow-hidden">
           {filtered.map(r => (
-            <Link key={r.id} href={`/proposals/${r.id}`} className="flex items-center justify-between px-5 py-4 hover:bg-gray-50">
+            <Link key={r.id} href={`/proposals/${r.id}`} className="flex flex-col gap-2 px-5 py-4 hover:bg-gray-50 sm:flex-row sm:items-center sm:justify-between">
               <div className="min-w-0">
                 <p className="text-sm font-medium text-gray-900 truncate">
                   {r.company}{r.name ? ` · ${r.name}` : ''}
@@ -299,7 +300,7 @@ export default function DashboardClient({ rows }: { rows: DashRow[] }) {
                   {r.product ? `${r.product} · ` : ''}{new Date(r.created_at).toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: 'numeric' })}
                 </p>
               </div>
-              <div className="flex items-center gap-2 shrink-0 ml-3">
+              <div className="flex flex-wrap items-center gap-2 sm:ml-3 sm:shrink-0">
                 {Object.keys(r.value).length > 0 && (
                   <span className="text-sm font-semibold text-gray-900 tabular-nums mr-1">{formatTotals(r.value)}</span>
                 )}

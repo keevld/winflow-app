@@ -3,7 +3,8 @@
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 
 // Recorrido animado del proceso: se reproduce solo, paso a paso, como un video corto,
-// y también se puede recorrer con clics. Las pantallas son ilustrativas (agencia de ejemplo).
+// y también se puede recorrer con clics. Solo se detiene con el botón de pausa (no al pasar el cursor:
+// la sección ocupa casi toda la pantalla y el cursor suele quedar encima). Las pantallas son ilustrativas (agencia de ejemplo).
 
 const STEP_MS = 7000
 
@@ -238,10 +239,6 @@ export default function ProcessDemo() {
     <div
       ref={root}
       className={`wd ${playing ? 'wd-playing' : ''} ${visible ? 'wd-visible' : ''}`}
-      onMouseEnter={() => setPaused(true)}
-      onMouseLeave={() => setPaused(false)}
-      onFocus={() => setPaused(true)}
-      onBlur={() => setPaused(false)}
     >
       <ol className="wd-steps">
         {STEPS.map((s, n) => (
@@ -266,6 +263,11 @@ export default function ProcessDemo() {
           <div className="wd-chrome">
             <i /><i /><i />
             <span>Winflow · paso {i + 1} de {STEPS.length}</span>
+            {!reduced && (
+              <button type="button" className="wd-pause" onClick={() => setPaused(v => !v)} aria-pressed={paused}>
+                {paused ? 'Reproducir' : 'Pausar'}
+              </button>
+            )}
           </div>
           <div className="wd-screen" key={step.key}>
             <Scene step={step.key} />

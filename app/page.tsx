@@ -1,4 +1,3 @@
-import { redirect } from 'next/navigation'
 import type { Metadata } from 'next'
 import { createClient } from '@/lib/supabase/server'
 import Landing from './_landing/Landing'
@@ -22,16 +21,15 @@ export const metadata: Metadata = {
 }
 
 export default async function Home() {
-  // Quien ya inició sesión entra directo a su panel.
+  // La landing es siempre la landing. Si hay sesión iniciada, la barra ofrece «Ir a mi panel» en vez de «Entrar».
   const sb = await createClient()
   const {
     data: { user },
   } = await sb.auth.getUser()
-  if (user) redirect('/dashboard')
 
   return (
     <div className={outfit.variable}>
-      <Landing />
+      <Landing loggedIn={!!user} />
     </div>
   )
 }

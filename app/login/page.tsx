@@ -34,45 +34,57 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+    <div className="wf-app wf-auth min-h-screen flex flex-col items-center justify-center px-4 py-10">
       <div className="w-full max-w-sm">
-        <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold text-gray-900">Winflow</h1>
-          <p className="text-sm text-gray-500 mt-1">Propuestas hiperpersonalizadas</p>
-        </div>
+        <a href="/" className="mb-8 flex flex-col items-center gap-3" aria-label="Winflow, inicio">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/brand/winflow-mark.png" alt="" width={374} height={188} className="h-14 w-auto" />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/brand/winflow-word-dark.png" alt="Winflow" width={582} height={114} className="h-6 w-auto" />
+        </a>
 
         {sent ? (
-          <div className="bg-white rounded-xl border border-gray-200 p-6 text-center">
-            <p className="text-gray-700 font-medium">Revisa tu correo</p>
-            <p className="text-sm text-gray-500 mt-1">
-              Te mandamos un link mágico a <strong>{email}</strong>
+          <div className="rounded-2xl border border-white/80 bg-white p-7 text-center shadow-xl shadow-gray-900/10">
+            <h1 className="text-xl font-semibold text-gray-900">Revisa tu correo</h1>
+            <p className="mt-2 text-sm text-gray-500">
+              Te mandamos un enlace para entrar a <strong className="text-gray-700">{email}</strong>. Ábrelo en este mismo navegador.
             </p>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4 rounded-2xl border border-white/80 bg-white p-7 shadow-xl shadow-gray-900/10">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <h1 className="text-xl font-semibold text-gray-900">Entra a tu cuenta</h1>
+              <p className="mt-1 text-sm text-gray-500">Te enviamos un enlace a tu correo. Sin contraseñas.</p>
+            </div>
+            <div>
+              <label htmlFor="login-email" className="mb-1 block text-sm font-medium text-gray-700">
                 Correo electrónico
               </label>
               <input
+                id="login-email"
                 type="email"
                 required
+                autoComplete="email"
                 value={email}
                 onChange={e => setEmail(e.target.value)}
                 placeholder="tu@agencia.com"
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+                className="w-full rounded-xl border border-gray-300 bg-white px-3.5 py-2.5 text-sm focus:border-brand-teal focus:outline-none focus:ring-4 focus:ring-brand-teal/20"
               />
             </div>
-            {error && <p className="text-sm text-red-600">{error}</p>}
+            {error && <p className="text-sm text-red-600" role="alert">{error}</p>}
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-gray-900 text-white rounded-lg py-2 text-sm font-medium hover:bg-gray-800 disabled:opacity-50"
+              className="w-full rounded-full bg-gray-900 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-gray-800 disabled:opacity-50"
             >
-              {loading ? 'Enviando...' : 'Entrar con link mágico'}
+              {loading ? 'Enviando…' : 'Enviarme el enlace'}
             </button>
           </form>
         )}
+
+        <p className="mt-6 text-center text-sm text-gray-700">
+          ¿Aún no tienes acceso? <a href="/#solicitar" className="font-semibold text-gray-900 underline underline-offset-2">Solicita el piloto</a>
+        </p>
       </div>
     </div>
   )

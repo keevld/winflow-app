@@ -1,26 +1,69 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+/* ── Marca Winflow en la app ──────────────────────────────────────
+   La app usa las clases de gris de Tailwind en casi todo. En vez de
+   tocar cada pantalla, aquí se redefine esa escala con los tonos del
+   logo: oscuros en azul petróleo, claros en crema. Así botones, textos
+   y bordes de toda la app quedan con la marca. */
+@theme {
+  --font-sans: var(--font-hanken), ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-display: var(--font-outfit), var(--font-hanken), ui-sans-serif, system-ui, sans-serif;
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+  --color-gray-50: #f9f7f2;
+  --color-gray-100: #f1eee7;
+  --color-gray-200: #e5e1d7;
+  --color-gray-300: #d3d2c9;
+  --color-gray-400: #8d9ca3;
+  --color-gray-500: #64777f;
+  --color-gray-600: #4a5f69;
+  --color-gray-700: #2f4753;
+  --color-gray-800: #173a4c;
+  --color-gray-900: #0f2a37;
+  --color-gray-950: #0b202b;
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --color-slate-200: #d5e2e6;
+  --color-slate-300: #b9cbd1;
+  --color-slate-400: #8fa5ad;
+  --color-slate-500: #6f8791;
+  --color-slate-900: #0f2a37;
+
+  --color-indigo-100: #fce6e2;
+  --color-indigo-600: #4f93a1;
+  --color-indigo-800: #8d3a35;
+
+  --color-brand-navy: #173a4c;
+  --color-brand-deep: #0f2a37;
+  --color-brand-teal: #4f93a1;
+  --color-brand-mint: #8fc0ac;
+  --color-brand-mint-soft: #e4f1eb;
+  --color-brand-coral: #e8706f;
+  --color-brand-coral-soft: #fce6e2;
+  --color-brand-peach: #fbe6c6;
+  --color-brand-paper: #f9f7f2;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: #f9f7f2;
+  color: #13262f;
+  font-family: var(--font-sans);
+}
+
+/* Títulos de la app con la tipografía del logo. */
+.wf-app :where(h1, h2) {
+  font-family: var(--font-display);
+  letter-spacing: -0.015em;
+}
+.wf-app ::selection { background: #fbe6c6; color: #0f2a37; }
+
+/* Tablero oscuro del panel: azul petróleo con un brillo menta y coral, como el arte de la marca. */
+.wf-board {
+  background:
+    radial-gradient(120% 140% at 100% 0%, rgba(79, 147, 161, 0.38) 0%, transparent 55%),
+    radial-gradient(90% 120% at 0% 100%, rgba(232, 112, 111, 0.16) 0%, transparent 50%),
+    #0f2a37;
+}
+
+/* Fondo de la pantalla de acceso: el degradado del logo. */
+.wf-auth {
+  background: linear-gradient(205deg, #8fb9c4 0%, #bccfd0 34%, #e3ddd0 62%, #fbe6c6 100%);
 }

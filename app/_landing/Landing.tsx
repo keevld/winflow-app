@@ -66,7 +66,7 @@ function Icon({ name }: { name: keyof typeof ICONS }) {
   )
 }
 
-export function SiteNav({ simple = false }: { simple?: boolean }) {
+export function SiteNav({ simple = false, loggedIn = false }: { simple?: boolean; loggedIn?: boolean }) {
   return (
     <header className="lp-nav">
       <div className="lp-nav-in">
@@ -81,7 +81,7 @@ export function SiteNav({ simple = false }: { simple?: boolean }) {
             <a href="#producto">Producto</a>
             <a href="#piloto">Piloto fundador</a>
             <a href="#preguntas">Preguntas</a>
-            <a className="lp-nav-login" href="/login">Entrar</a>
+            <a className="lp-nav-login" href={loggedIn ? '/dashboard' : '/login'}>{loggedIn ? 'Ir a mi panel' : 'Entrar'}</a>
             <a className="lp-btn lp-btn-primary lp-btn-small" href="#solicitar">Solicitar piloto</a>
           </nav>
         )}
@@ -90,7 +90,7 @@ export function SiteNav({ simple = false }: { simple?: boolean }) {
   )
 }
 
-export function SiteFooter() {
+export function SiteFooter({ loggedIn = false }: { loggedIn?: boolean }) {
   return (
     <footer className="lp-footer">
       <div className="lp-footer-in">
@@ -109,7 +109,7 @@ export function SiteFooter() {
             <p className="lp-footer-h">Contacto</p>
             <a href="mailto:hola@winflowapp.com">hola@winflowapp.com</a>
             <a href="/privacidad">Aviso de privacidad</a>
-            <a href="/login">Entrar a mi cuenta</a>
+            <a href={loggedIn ? '/dashboard' : '/login'}>{loggedIn ? 'Ir a mi panel' : 'Entrar a mi cuenta'}</a>
           </div>
         </div>
       </div>
@@ -120,10 +120,10 @@ export function SiteFooter() {
 
 // ── Página ─────────────────────────────────────────────────────────
 
-export default function Landing() {
+export default function Landing({ loggedIn = false }: { loggedIn?: boolean }) {
   return (
     <div className="lp">
-      <SiteNav />
+      <SiteNav loggedIn={loggedIn} />
 
       <main>
         {/* ── Hero ── */}
@@ -131,7 +131,6 @@ export default function Landing() {
           <Ribbons id="lp-rib-hero" className="lp-hero-ribbons" />
           <div className="lp-hero-in">
             <div className="lp-hero-copy">
-              <p className="lp-eyebrow"><span className="lp-dot" />Para agencias pequeñas de LATAM</p>
               <h1>
                 Propuestas que suenan a tu agencia.{' '}
                 <span className="lp-h1-2"><span className="lp-hl">Y un seguimiento que no se olvida.</span></span>
@@ -171,7 +170,6 @@ export default function Landing() {
               <div className="lp-chip lp-chip-3"><span className="lp-chip-i fol"><Icon name="follow" /></span><div><b>Seguimiento 1 de 3</b><span>Sale solo en 3 días</span></div></div>
             </div>
           </div>
-          <p className="lp-hero-caption">Vista ilustrativa con Estudio Brújula, una agencia de ejemplo.</p>
         </section>
 
         {/* ── Franja de valor ── */}
@@ -192,7 +190,6 @@ export default function Landing() {
             <h2>De los datos de tu agencia a la propuesta enviada.</h2>
             <p className="lp-sub">El recorrido se reproduce solo. También puedes dar clic en cualquier paso.</p>
             <ProcessDemo />
-            <p className="lp-how-note">Pantallas ilustrativas con Estudio Brújula, una agencia de ejemplo.</p>
           </div>
         </section>
 
@@ -438,7 +435,7 @@ export default function Landing() {
         </section>
       </main>
 
-      <SiteFooter />
+      <SiteFooter loggedIn={loggedIn} />
     </div>
   )
 }

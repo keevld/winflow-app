@@ -325,6 +325,8 @@ html { scroll-behavior: smooth; }
 .wd-chrome { display: flex; align-items: center; gap: 6px; padding: 11px 16px; background: #f3f1ec; border-bottom: 1px solid var(--line); }
 .wd-chrome i { width: 10px; height: 10px; border-radius: 50%; background: #d9d4c8; }
 .wd-chrome span { margin-left: 10px; font-size: 12px; color: #7b878d; }
+.wd-pause { margin-left: auto; font: inherit; font-size: 12px; font-weight: 600; color: var(--navy); background: #fff; border: 1px solid var(--line); border-radius: 999px; padding: 3px 12px; cursor: pointer; }
+.wd-pause:hover { border-color: var(--navy); }
 .wd-screen { height: 486px; padding: 24px 30px; overflow: hidden; background: linear-gradient(180deg, #fff, #fbfaf7); }
 .wd-caption, .wd-dots { display: none; }
 
