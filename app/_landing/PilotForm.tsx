@@ -85,7 +85,7 @@ export default function PilotForm() {
           </select>
         </label>
         <label>
-          <span>¿Cómo registras tus llamadas con prospectos?</span>
+          <span>¿Cómo registras tus llamadas?</span>
           <select name="call_tool" defaultValue="">
             <option value="">Elige una opción</option>
             <option value="notas">Tomo notas a mano</option>

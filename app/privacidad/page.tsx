@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
-import '../_landing/landing.css'
+import { SiteNav, SiteFooter } from '../_landing/Landing'
+import { outfit } from '../_landing/font'
 
 export const metadata: Metadata = {
   title: 'Aviso de privacidad · Winflow',
@@ -8,11 +9,9 @@ export const metadata: Metadata = {
 
 export default function Privacidad() {
   return (
+    <div className={outfit.variable}>
     <div className="lp">
-      <header className="lp-nav">
-        <a className="lp-logo" href="/">Winflow</a>
-        <nav><a href="/">Volver al inicio</a></nav>
-      </header>
+      <SiteNav simple />
       <main>
         <article className="lp-legal">
           <h1>Aviso de privacidad</h1>
@@ -49,10 +48,8 @@ export default function Privacidad() {
           <p>Publicaremos aquí cualquier actualización con su fecha.</p>
         </article>
       </main>
-      <footer className="lp-footer">
-        <p>© Winflow · Lisboa, Portugal</p>
-        <p><a href="mailto:hola@winflowapp.com">hola@winflowapp.com</a></p>
-      </footer>
+      <SiteFooter />
+    </div>
     </div>
   )
 }
