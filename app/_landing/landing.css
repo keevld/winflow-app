@@ -264,7 +264,7 @@ html { scroll-behavior: smooth; }
 .lp-footer-in { max-width: var(--wrap); margin: 0 auto; padding: 64px 24px 40px; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 40px; }
 .lp-footer-brand { max-width: 320px; display: grid; gap: 18px; }
 .lp-footer-brand p { font-size: 15px; }
-.lp .lp-footer .lp-logo-mark { height: 44px; padding: 9px 10px; background: var(--paper); border-radius: 13px; }
+.lp .lp-footer .lp-logo-mark { height: 40px; }
 .lp .lp-footer .lp-logo-word { height: 19px; }
 .lp-footer-cols { display: flex; gap: 72px; flex-wrap: wrap; }
 .lp-footer-cols div { display: grid; gap: 10px; align-content: start; }

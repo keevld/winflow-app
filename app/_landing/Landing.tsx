@@ -9,7 +9,7 @@ import './landing.css'
 export function Logo({ light = false, href = '/' }: { light?: boolean; href?: string }) {
   return (
     <a className="lp-logo" href={href} aria-label="Winflow, inicio">
-      <img className="lp-logo-mark" src="/brand/winflow-mark.png" alt="" width={374} height={188} />
+      <img className="lp-logo-mark" src={light ? '/brand/winflow-mark-light.png' : '/brand/winflow-mark.png'} alt="" width={374} height={188} />
       <img
         className="lp-logo-word"
         src={light ? '/brand/winflow-word-light.png' : '/brand/winflow-word-dark.png'}
