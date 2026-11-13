@@ -84,11 +84,11 @@ html { scroll-behavior: smooth; }
 
 /* ── Hero ── */
 .lp-hero { position: relative; overflow: hidden; background: linear-gradient(205deg, #8fb9c4 0%, #bccfd0 34%, #e3ddd0 62%, #fbe6c6 100%); }
-.lp-hero::after { content: ''; position: absolute; inset: auto 0 0 0; height: 120px; background: linear-gradient(to bottom, transparent, var(--paper)); pointer-events: none; }
+.lp-hero::after { content: ''; position: absolute; inset: auto 0 0 0; height: 70px; background: linear-gradient(to bottom, transparent, var(--paper)); pointer-events: none; }
 .lp-ribbons { position: absolute; left: 0; width: 100%; pointer-events: none; }
 .lp-hero-ribbons { bottom: -40px; height: 460px; opacity: 0.6; -webkit-mask-image: linear-gradient(90deg, transparent 0%, rgba(0, 0, 0, 0.12) 40%, #000 82%); mask-image: linear-gradient(90deg, transparent 0%, rgba(0, 0, 0, 0.12) 40%, #000 82%); }
 .lp-h1-2 { display: block; }
-.lp-hero-in { position: relative; z-index: 1; max-width: var(--wrap); margin: 0 auto; padding: 84px 24px 96px; display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr); gap: 56px; align-items: center; }
+.lp-hero-in { position: relative; z-index: 1; max-width: var(--wrap); margin: 0 auto; padding: 84px 24px 56px; display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr); gap: 56px; align-items: center; }
 .lp-eyebrow { display: inline-flex; align-items: center; gap: 10px; padding: 7px 14px 7px 12px; border-radius: 999px; background: rgba(255, 255, 255, 0.6); border: 1px solid rgba(255, 255, 255, 0.8); font-family: var(--display); font-size: 13.500px; font-weight: 600; letter-spacing: 0.04em; color: var(--navy); margin-bottom: 22px; backdrop-filter: blur(6px); }
 .lp-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--spark); box-shadow: 0 0 0 4px rgba(252, 69, 3, 0.16); }
 .lp-hl { background: linear-gradient(transparent 64%, rgba(232, 112, 111, 0.55) 64%, rgba(232, 112, 111, 0.55) 92%, transparent 92%); padding: 0 0.06em; margin: 0 -0.06em; }
@@ -135,12 +135,11 @@ html { scroll-behavior: smooth; }
 @keyframes lp-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
 
 /* ── Franja de valor ── */
-.lp-strip { background: transparent; }
-.lp-strip ul { max-width: var(--wrap); margin: 0 auto; padding: 8px 24px 40px; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 20px; }
-.lp-strip li { display: flex; align-items: flex-start; gap: 12px; line-height: 1.35; }
-.lp-strip b { display: block; font-size: 15px; font-weight: 700; color: var(--navy-deep); }
-.lp-strip span { display: block; font-size: 13.500px; color: var(--muted); margin-top: 2px; }
-.lp-strip .lp-icon { color: var(--teal); margin-top: 1px; }
+.lp-hero .lp-strip { position: relative; z-index: 1; list-style: none; max-width: var(--wrap); margin: 0 auto; padding: 4px 24px 84px; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 20px; }
+.lp-hero .lp-strip li { display: flex; align-items: flex-start; gap: 12px; line-height: 1.35; }
+.lp-hero .lp-strip b { display: block; font-size: 15px; font-weight: 700; color: var(--navy-deep); }
+.lp-hero .lp-strip span { display: block; font-size: 13.500px; color: #3d5560; margin-top: 2px; }
+.lp-hero .lp-strip .lp-icon { color: var(--teal); margin-top: 1px; }
 
 /* ── Secciones ── */
 .lp-section { max-width: var(--wrap); margin: 0 auto; padding: 104px 24px; }
@@ -450,7 +449,7 @@ html { scroll-behavior: smooth; }
 /* ── Adaptación ── */
 @media (max-width: 1040px) {
   .lp-nav nav a:not(.lp-btn):not(.lp-nav-login) { display: none; }
-  .lp-strip ul { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .lp-hero .lp-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .lp-feature { gap: 40px; }
   .lp-chip-2 { left: -8px; }
 }
@@ -479,8 +478,8 @@ html { scroll-behavior: smooth; }
   .lp-faq details p { padding-right: 8px; }
 }
 @media (max-width: 560px) {
-  .lp-strip ul { grid-template-columns: 1fr; }
-  .lp-strip ul { gap: 12px; }
+  .lp-hero .lp-strip { grid-template-columns: 1fr; }
+  .lp-hero .lp-strip { gap: 12px; padding-bottom: 64px; }
   .lp .lp-logo-word { height: 15px; }
   .lp .lp-logo-mark { height: 27px; }
   .lp-nav .lp-nav-login { display: none; }

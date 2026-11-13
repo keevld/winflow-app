@@ -170,11 +170,7 @@ export default function Landing({ loggedIn = false }: { loggedIn?: boolean }) {
               <div className="lp-chip lp-chip-3"><span className="lp-chip-i fol"><Icon name="follow" /></span><div><b>Seguimiento 1 de 3</b><span>Sale solo en 3 días</span></div></div>
             </div>
           </div>
-        </section>
-
-        {/* ── Franja de valor ── */}
-        <section className="lp-strip" aria-label="Lo que hace Winflow">
-          <ul>
+          <ul className="lp-strip" aria-label="Lo que hace Winflow">
             <li><Icon name="voice" /><div><b>Tu tono, tu marca, tus colores y tu logo</b><span>Aprendemos de cómo lo haces tú.</span></div></li>
             <li><Icon name="check" /><div><b>Datos verificados con filtros</b><span>Y la decisión final sigue siendo tuya.</span></div></li>
             <li><Icon name="page" /><div><b>Página propia y PDF</b><span>Tu cliente la abre desde un enlace.</span></div></li>

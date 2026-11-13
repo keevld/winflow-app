@@ -6,9 +6,9 @@ import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 
 // y también se puede recorrer con clics. Solo se detiene con el botón de pausa (no al pasar el cursor:
 // la sección ocupa casi toda la pantalla y el cursor suele quedar encima). Las pantallas son ilustrativas (agencia de ejemplo).
 
-const STEP_MS = 12000
+const STEP_MS = 15000
 // Las animaciones internas se alargan para llenar el tiempo de cada paso y que dé tiempo a leer.
-const SLOW = 1.7
+const SLOW = 2
 const ms = (v: number) => `${Math.round(v * SLOW)}ms`
 
 type Step = { key: string; title: string; text: string; soon?: boolean }
