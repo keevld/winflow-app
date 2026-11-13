@@ -135,8 +135,8 @@ html { scroll-behavior: smooth; }
 @keyframes lp-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
 
 /* ── Franja de valor ── */
-.lp-strip { background: var(--card); border-bottom: 1px solid var(--line); }
-.lp-strip ul { max-width: var(--wrap); margin: 0 auto; padding: 22px 24px; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 20px; }
+.lp-strip { background: transparent; }
+.lp-strip ul { max-width: var(--wrap); margin: 0 auto; padding: 8px 24px 40px; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 20px; }
 .lp-strip li { display: flex; align-items: flex-start; gap: 12px; line-height: 1.35; }
 .lp-strip b { display: block; font-size: 15px; font-weight: 700; color: var(--navy-deep); }
 .lp-strip span { display: block; font-size: 13.500px; color: var(--muted); margin-top: 2px; }

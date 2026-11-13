@@ -6,7 +6,10 @@ import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 
 // y también se puede recorrer con clics. Solo se detiene con el botón de pausa (no al pasar el cursor:
 // la sección ocupa casi toda la pantalla y el cursor suele quedar encima). Las pantallas son ilustrativas (agencia de ejemplo).
 
-const STEP_MS = 7000
+const STEP_MS = 12000
+// Las animaciones internas se alargan para llenar el tiempo de cada paso y que dé tiempo a leer.
+const SLOW = 1.7
+const ms = (v: number) => `${Math.round(v * SLOW)}ms`
 
 type Step = { key: string; title: string; text: string; soon?: boolean }
 
@@ -47,7 +50,7 @@ const STEPS: Step[] = [
 // Aparición escalonada: cada pieza entra con un retraso (en ms).
 function In({ d, children, className = '', as: Tag = 'div' }: { d: number; children?: ReactNode; className?: string; as?: 'div' | 'span' | 'li' | 'p' }) {
   return (
-    <Tag className={`wd-in ${className}`} style={{ '--d': `${d}ms` } as CSSProperties}>
+    <Tag className={`wd-in ${className}`} style={{ '--d': ms(d) } as CSSProperties}>
       {children}
     </Tag>
   )
@@ -57,7 +60,7 @@ function In({ d, children, className = '', as: Tag = 'div' }: { d: number; child
 function Type({ d, children, n }: { d: number; children: string; n?: number }) {
   const len = n ?? children.length
   return (
-    <span className="wd-type" style={{ '--d': `${d}ms`, '--n': len, '--t': `${Math.min(1600, len * 45)}ms` } as CSSProperties}>
+    <span className="wd-type" style={{ '--d': ms(d), '--n': len, '--t': ms(Math.min(1600, len * 45)) } as CSSProperties}>
       {children}
     </span>
   )
@@ -97,9 +100,9 @@ function Scene({ step }: { step: string }) {
         <div className="wd-scene">
           <p className="wd-h">Tu voz</p>
           <div className="wd-docs">
-            <In d={200} className="wd-doc"><i /><span>Una propuesta que ya enviaste</span><em className="wd-scan" style={{ '--d': '700ms' } as CSSProperties} /></In>
-            <In d={450} className="wd-doc"><i /><span>Uno de tus casos de éxito</span><em className="wd-scan" style={{ '--d': '1300ms' } as CSSProperties} /></In>
-            <In d={700} className="wd-doc"><i /><span>Cómo le escribes a un cliente</span><em className="wd-scan" style={{ '--d': '1900ms' } as CSSProperties} /></In>
+            <In d={200} className="wd-doc"><i /><span>Una propuesta que ya enviaste</span><em className="wd-scan" style={{ '--d': ms(700) } as CSSProperties} /></In>
+            <In d={450} className="wd-doc"><i /><span>Uno de tus casos de éxito</span><em className="wd-scan" style={{ '--d': ms(1300) } as CSSProperties} /></In>
+            <In d={700} className="wd-doc"><i /><span>Cómo le escribes a un cliente</span><em className="wd-scan" style={{ '--d': ms(1900) } as CSSProperties} /></In>
           </div>
           <In d={2500} as="p" className="wd-l">Lo que aprendimos de ti</In>
           <div className="wd-tags">
@@ -162,11 +165,11 @@ function Scene({ step }: { step: string }) {
         <div className="wd-scene">
           <p className="wd-h">Propuesta para Casa Olmo</p>
           <div className="wd-write">
-            <i style={{ '--d': '200ms', '--w': '92%' } as CSSProperties} />
-            <i style={{ '--d': '500ms', '--w': '100%' } as CSSProperties} />
-            <i style={{ '--d': '800ms', '--w': '84%' } as CSSProperties} />
-            <i style={{ '--d': '1100ms', '--w': '96%' } as CSSProperties} />
-            <i style={{ '--d': '1400ms', '--w': '58%' } as CSSProperties} />
+            <i style={{ '--d': ms(200), '--w': '92%' } as CSSProperties} />
+            <i style={{ '--d': ms(500), '--w': '100%' } as CSSProperties} />
+            <i style={{ '--d': ms(800), '--w': '84%' } as CSSProperties} />
+            <i style={{ '--d': ms(1100), '--w': '96%' } as CSSProperties} />
+            <i style={{ '--d': ms(1400), '--w': '58%' } as CSSProperties} />
           </div>
           <In d={2100} className="wd-verify">
             <p className="wd-verify-h"><span className="wd-badge wd-badge-ok">Segundo filtro</span>1 frase corregida</p>
