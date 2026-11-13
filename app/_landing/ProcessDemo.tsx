@@ -22,13 +22,13 @@ const STEPS: Step[] = [
   },
   {
     key: 'cliente',
-    title: 'Llenas los datos de tu cliente',
-    text: 'Quién es, qué necesita y su sitio web, que Winflow lee por ti.',
+    title: 'Llenas los datos de tu cliente, solo la primera vez',
+    text: 'Quién es, qué necesita y su sitio web, que Winflow lee por ti. Queda guardado para sus siguientes propuestas.',
   },
   {
     key: 'llamada',
-    title: 'Cuentas la llamada',
-    text: 'Pegas tus notas o la transcripción. Conectar Zoom, Meet o Teams viene en camino.',
+    title: 'Tienes tu llamada o videollamada',
+    text: 'Muy pronto: conectas Zoom, Meet o Teams y la propuesta se redacta sola al colgar, sin que subas nada. Hoy pegas tus notas o la transcripción.',
     soon: true,
   },
   {
@@ -122,25 +122,38 @@ function Scene({ step }: { step: string }) {
             <In d={400} className="wd-wide"><label>Qué necesita</label><span className="wd-field"><Type d={1700}>Llenar el restaurante entre semana</Type></span></In>
             <In d={500} className="wd-wide"><label>Sitio web</label><span className="wd-field wd-field-web"><Type d={3000} n={14}>Sitio de Casa Olmo</Type><In d={4000} as="span" className="wd-badge wd-pop">Leído por Winflow</In></span></In>
           </div>
-          <In d={4500} className="wd-toast"><i className="wd-ok" />Menú, horarios y estilo del negocio, sin que los escribas.</In>
+          <In d={4500} className="wd-toast"><i className="wd-ok" />Guardado. En su siguiente propuesta ya no lo vuelves a llenar.</In>
         </div>
       )
     case 'llamada':
       return (
         <div className="wd-scene">
           <p className="wd-h">La llamada</p>
-          <div className="wd-connect">
-            <In d={200} className="wd-conn"><b>Zoom</b><em>Próximamente</em></In>
-            <In d={350} className="wd-conn"><b>Google Meet</b><em>Próximamente</em></In>
-            <In d={500} className="wd-conn"><b>Teams</b><em>Próximamente</em></In>
-          </div>
-          <In d={900} as="p" className="wd-l">Hoy: pega tus notas o la transcripción</In>
-          <In d={1000} className="wd-notes">
-            <p><Type d={1300}>Quieren más reservas de lunes a jueves.</Type></p>
-            <p><Type d={2500}>Ya probaron anuncios, sin resultados.</Type></p>
-            <p><Type d={3700}>Decide Mariana, esta quincena.</Type></p>
+          <In d={200} className="wd-call">
+            <div className="wd-call-top">
+              <i className="wd-rec" />
+              <b>Videollamada con Mariana</b>
+              <em>Próximamente</em>
+            </div>
+            <div className="wd-wave">
+              {Array.from({ length: 28 }, (_, k) => (
+                <i key={k} style={{ '--k': k, '--h': `${30 + ((k * 37) % 70)}%` } as CSSProperties} />
+              ))}
+            </div>
+            <div className="wd-call-apps"><span>Zoom</span><span>Google Meet</span><span>Teams</span></div>
           </In>
-          <In d={5000} className="wd-toast"><i className="wd-ok" />Listo. Con esto se arma la propuesta.</In>
+          <div className="wd-flow">
+            <In d={1300} as="span">Cuelgas</In>
+            <In d={1700} as="span" className="wd-arrow">→</In>
+            <In d={1900} as="span">Winflow toma los datos</In>
+            <In d={2300} as="span" className="wd-arrow">→</In>
+            <In d={2500} as="span" className="wd-flow-end">Propuesta redactada, sin subir nada</In>
+          </div>
+          <In d={3100} as="p" className="wd-l">Mientras llega: hoy pegas tus notas o la transcripción</In>
+          <In d={3200} className="wd-notes">
+            <p><Type d={3500}>Quieren más reservas de lunes a jueves.</Type></p>
+            <p><Type d={4500}>Decide Mariana, esta quincena.</Type></p>
+          </In>
         </div>
       )
     case 'redacta':
@@ -238,7 +251,7 @@ export default function ProcessDemo() {
               <span className="wd-t">
                 <b>
                   {s.title}
-                  {s.soon && <em>Próximamente: llamadas</em>}
+                  {s.soon && <em>Próximamente</em>}
                 </b>
                 <span>{s.text}</span>
               </span>
