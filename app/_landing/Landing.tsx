@@ -81,7 +81,7 @@ export function SiteNav({ simple = false, loggedIn = false }: { simple?: boolean
             <a href="#producto">Producto</a>
             <a href="#piloto">Piloto fundador</a>
             <a href="#preguntas">Preguntas</a>
-            <a className="lp-nav-login" href={loggedIn ? '/dashboard' : '/login'}>{loggedIn ? 'Ir a mi panel' : 'Entrar'}</a>
+            <a className="lp-nav-login" href={loggedIn ? '/panel' : '/login'}>{loggedIn ? 'Ir a mi panel' : 'Entrar'}</a>
             <a className="lp-btn lp-btn-primary lp-btn-small" href="#solicitar">Solicitar piloto</a>
           </nav>
         )}
@@ -109,7 +109,7 @@ export function SiteFooter({ loggedIn = false }: { loggedIn?: boolean }) {
             <p className="lp-footer-h">Contacto</p>
             <a href="mailto:hola@winflowapp.com">hola@winflowapp.com</a>
             <a href="/privacidad">Aviso de privacidad</a>
-            <a href={loggedIn ? '/dashboard' : '/login'}>{loggedIn ? 'Ir a mi panel' : 'Entrar a mi cuenta'}</a>
+            <a href={loggedIn ? '/panel' : '/login'}>{loggedIn ? 'Ir a mi panel' : 'Entrar a mi cuenta'}</a>
           </div>
         </div>
       </div>

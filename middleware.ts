@@ -46,8 +46,9 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
 
+  // /panel decide en servidor a dónde va cada quien: el dueño a su panel de negocio, los demás al de su agencia.
   if (user && pathname === '/login') {
-    return NextResponse.redirect(new URL('/dashboard', request.url))
+    return NextResponse.redirect(new URL('/panel', request.url))
   }
 
   return supabaseResponse

@@ -6,7 +6,10 @@ export async function GET(request: Request) {
   const code = searchParams.get('code')
   // Solo rutas internas: evita redirigir fuera del sitio con `next=@otro.com` o `next=//otro.com`.
   const rawNext = searchParams.get('next') ?? ''
-  const next = /^\/(?![/\\])[A-Za-z0-9\-_/?=&.%]*$/.test(rawNext) ? rawNext : '/dashboard'
+  // Después de iniciar sesión, /panel decide en servidor: el dueño de Winflow va a su panel de negocio y
+  // los demás al de su agencia. El login pide next=/dashboard, que aquí se trata como «la entrada normal».
+  const safeNext = /^\/(?![/\\])[A-Za-z0-9\-_/?=&.%]*$/.test(rawNext) ? rawNext : ''
+  const next = !safeNext || safeNext === '/dashboard' ? '/panel' : safeNext
 
   if (code) {
     const supabase = await createClient()

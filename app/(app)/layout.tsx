@@ -15,18 +15,28 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     .eq('id', user.id)
     .single()
 
-  const isPlatformAdmin = !!(await getPlatformAdmin())
-
+  // Panel de la agencia: lo que ve cualquier cliente. Nunca incluye nada de Winflow como negocio.
   const links: NavLink[] = [
     { href: '/dashboard', label: 'Propuestas', match: ['/dashboard', '/proposals'] },
     { href: '/clients', label: 'Clientes', match: ['/clients'] },
-    ...(isPlatformAdmin ? [{ href: '/admin', label: 'Panel Winflow', match: ['/admin'] }] : []),
     ...(profile?.role === 'admin' ? [{ href: '/settings', label: 'Perfil de agencia', match: ['/settings'] }] : []),
   ]
 
+  // Panel del dueño: solo si el servidor confirma que está en platform_admins.
+  const admin = await getPlatformAdmin()
+  let ownerLinks: NavLink[] | undefined
+  if (admin) {
+    const { count } = await admin.service.from('pilot_requests').select('id', { count: 'exact', head: true }).eq('status', 'new')
+    ownerLinks = [
+      { href: '/admin', label: 'Negocio', match: ['/admin'], exact: true },
+      { href: '/admin/agencies', label: 'Agencias', match: ['/admin/agencies'] },
+      { href: '/admin/requests', label: 'Solicitudes', match: ['/admin/requests'], badge: count ?? 0 },
+    ]
+  }
+
   return (
     <div className="wf-app min-h-screen bg-gray-50">
-      <AppNav links={links} userLabel={profile?.full_name || user.email || ''} />
+      <AppNav links={links} ownerLinks={ownerLinks} userLabel={profile?.full_name || user.email || ''} />
       <main className="max-w-5xl mx-auto px-6 py-8">{children}</main>
     </div>
   )
