@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import type { Proposal } from '@/lib/types'
+import { Loading, PageHeader } from '../../../ui'
 import {
   EMPTY_CONTENT,
   groupOptions,
@@ -16,14 +17,14 @@ import {
   type PriceItem,
 } from '@/lib/commercial'
 
-const inputClass = 'w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900'
-const smallInput = 'border border-gray-300 rounded-md px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900'
-const labelClass = 'block text-sm font-medium text-gray-700 mb-1'
+const inputClass = 'wf-input'
+const smallInput = 'wf-input-sm min-w-0'
+const labelClass = 'wf-label'
 
 function Card({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
-      <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide">{title}</h2>
+    <div className="wf-card">
+      <h2 className="wf-card-title">{title}</h2>
       {children}
     </div>
   )
@@ -197,38 +198,38 @@ export default function CommercialEditorPage() {
     }
   }
 
-  if (!proposal) return <div className="text-sm text-gray-400 py-20 text-center">Cargando...</div>
+  if (!proposal) return <Loading />
 
   const stuck = proposal.status === 'generating' && !!proposal.generation_started_at &&
     Date.now() - new Date(proposal.generation_started_at).getTime() > 4 * 60 * 1000
   if (stuck) {
     return (
-      <div className="bg-red-50 border border-red-200 rounded-xl p-6 max-w-2xl">
-        <p className="text-sm text-red-700 font-medium">La generación tardó demasiado</p>
-        <p className="text-xs text-red-500 mt-1">Tus datos no se pierden: vuelve a intentarlo.</p>
+      <div className="wf-alert wf-alert-error max-w-2xl !p-6">
+        <p className="font-semibold">La generación tardó demasiado</p>
+        <p className="mt-1 text-xs">Tus datos no se pierden: vuelve a intentarlo.</p>
         <Link href={`/proposals/commercial/new${proposal.parent_proposal_id ? `?from=${proposal.parent_proposal_id}` : ''}`}
-          className="inline-block mt-4 text-sm px-4 py-2 rounded-lg bg-gray-900 text-white">Intentar de nuevo</Link>
+          className="wf-btn mt-4">Intentar de nuevo</Link>
       </div>
     )
   }
 
   if (proposal.status === 'generating') {
     return (
-      <div className="bg-white rounded-xl border border-gray-200 p-8 text-center max-w-2xl">
-        <div className="animate-spin w-8 h-8 border-2 border-gray-900 border-t-transparent rounded-full mx-auto mb-4" />
-        <p className="text-sm text-gray-700 font-medium">Generando la propuesta comercial…</p>
-        <p className="text-xs text-gray-400 mt-1">Puede tardar hasta un minuto. Esta página se actualiza sola.</p>
+      <div className="wf-board mx-auto max-w-2xl rounded-3xl p-10 text-center text-white">
+        <div className="mx-auto mb-5 h-9 w-9 animate-spin rounded-full border-2 border-white/80 border-t-transparent" />
+        <p className="font-display text-lg font-semibold">Winflow está armando la propuesta comercial…</p>
+        <p className="mt-1 text-sm text-slate-300">Puede tardar hasta un minuto. Esta página se actualiza sola.</p>
       </div>
     )
   }
 
   if (proposal.status === 'failed' && !proposal.commercial) {
     return (
-      <div className="bg-red-50 border border-red-200 rounded-xl p-6 max-w-2xl">
-        <p className="text-sm text-red-700 font-medium">No se pudo generar la propuesta comercial</p>
-        {proposal.failure_reason && <p className="text-xs text-red-500 mt-1">{proposal.failure_reason}</p>}
+      <div className="wf-alert wf-alert-error max-w-2xl !p-6">
+        <p className="font-semibold">No se pudo generar la propuesta comercial</p>
+        {proposal.failure_reason && <p className="mt-1 text-xs">{proposal.failure_reason}</p>}
         <Link href={`/proposals/commercial/new${proposal.parent_proposal_id ? `?from=${proposal.parent_proposal_id}` : ''}`}
-          className="inline-block mt-4 text-sm px-4 py-2 rounded-lg bg-gray-900 text-white">Intentar de nuevo</Link>
+          className="wf-btn mt-4">Intentar de nuevo</Link>
       </div>
     )
   }
@@ -236,25 +237,24 @@ export default function CommercialEditorPage() {
   const isSent = proposal.status === 'sent' || proposal.status === 'sending'
 
   return (
-    <div className="max-w-3xl space-y-6">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-xl font-bold text-gray-900">Propuesta comercial para {proposal.prospect_company}</h1>
-          <p className="text-sm text-gray-500 mt-0.5">
-            {proposal.prospect_name}{proposal.prospect_title ? ` · ${proposal.prospect_title}` : ''}
-          </p>
-        </div>
-        {proposal.accepted_at ? (
-          <span className="text-xs font-medium px-3 py-1.5 rounded-full bg-emerald-600 text-white">Aceptada</span>
-        ) : isSent ? (
-          <span className="text-xs font-medium px-3 py-1.5 rounded-full bg-blue-100 text-blue-800">Enviada</span>
-        ) : (
-          <span className="text-xs font-medium px-3 py-1.5 rounded-full bg-emerald-100 text-emerald-800">Lista para revisar</span>
-        )}
-      </div>
+    <div className="mx-auto max-w-4xl space-y-6">
+      <PageHeader
+        back={proposal.parent_proposal_id ? { href: `/proposals/${proposal.parent_proposal_id}`, label: 'Propuesta inicial' } : { href: '/dashboard', label: 'Propuestas' }}
+        title={`Propuesta comercial para ${proposal.prospect_company}`}
+        subtitle={`${proposal.prospect_name}${proposal.prospect_title ? ` · ${proposal.prospect_title}` : ''}`}
+        action={
+          proposal.accepted_at ? (
+            <span className="wf-pill bg-emerald-600 text-white">Aceptada</span>
+          ) : isSent ? (
+            <span className="wf-pill bg-brand-teal/15 text-brand-navy">Enviada</span>
+          ) : (
+            <span className="wf-pill bg-brand-mint-soft text-[#1f5a45]">Lista para revisar</span>
+          )
+        }
+      />
 
       {proposal.accepted_at && (
-        <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-5 text-sm text-emerald-900 space-y-1">
+        <div className="wf-alert wf-alert-ok space-y-1 !p-5">
           <p className="font-semibold">
             {proposal.accepted_by_name || 'El prospecto'} aceptó la propuesta el {new Date(proposal.accepted_at).toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' })}.
           </p>
@@ -264,7 +264,7 @@ export default function CommercialEditorPage() {
       )}
 
       {!isSent && proposal.generation_warnings && proposal.generation_warnings.length > 0 && (
-        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-sm text-amber-900 space-y-1">
+        <div className="wf-alert wf-alert-warn space-y-1">
           <p className="font-semibold">Revisa esto antes de enviar</p>
           <ul className="list-disc pl-5 text-xs space-y-0.5">
             {proposal.generation_warnings.map((w, i) => <li key={i}>{w}</li>)}
@@ -273,12 +273,12 @@ export default function CommercialEditorPage() {
       )}
 
       {isSent && !proposal.accepted_at && (
-        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 text-sm text-blue-900">
+        <div className="wf-alert wf-alert-info">
           Esta propuesta ya se envió. Puedes verla tal como la ve el prospecto con el botón de vista previa.
         </div>
       )}
 
-      <fieldset disabled={!editable} className="space-y-6 disabled:opacity-90">
+      <fieldset disabled={!editable} className="min-w-0 space-y-6 disabled:opacity-90">
         <Card title="Resumen">
           <div>
             <label className={labelClass}>Título</label>
@@ -297,11 +297,11 @@ export default function CommercialEditorPage() {
 
         <Card title="Solución">
           {content.solution.map((s, i) => (
-            <div key={i} className="border border-gray-200 rounded-lg p-3 space-y-2">
+            <div key={i} className="space-y-2 rounded-xl border border-gray-200 bg-gray-50/60 p-3">
               <div className="flex gap-2">
                 <input className={inputClass} value={s.title} placeholder="Título"
                   onChange={e => setC('solution', content.solution.map((x, j) => j === i ? { ...x, title: e.target.value } : x))} />
-                <button type="button" className="text-xs text-red-600 hover:underline"
+                <button type="button" className="wf-link-danger"
                   onClick={() => setC('solution', content.solution.filter((_, j) => j !== i))}>Quitar</button>
               </div>
               <textarea rows={3} className={inputClass} value={s.body}
@@ -322,7 +322,7 @@ export default function CommercialEditorPage() {
                 onChange={e => setC('timeline', content.timeline.map((x, j) => j === i ? { ...x, duration: e.target.value } : x))} />
               <input className={`${smallInput} col-span-4`} value={t.description} placeholder="Qué ocurre"
                 onChange={e => setC('timeline', content.timeline.map((x, j) => j === i ? { ...x, description: e.target.value } : x))} />
-              <button type="button" className="text-xs text-red-600 hover:underline col-span-1"
+              <button type="button" className="wf-link-danger col-span-1"
                 onClick={() => setC('timeline', content.timeline.filter((_, j) => j !== i))}>Quitar</button>
             </div>
           ))}
@@ -368,7 +368,7 @@ export default function CommercialEditorPage() {
                         <span className="col-span-2 text-sm text-gray-700 text-right">
                           {itemTotal(it) === null ? '—' : formatMoney(itemTotal(it)!, it.currency)}
                         </span>
-                        <button type="button" className="text-xs text-red-600 hover:underline col-span-1" onClick={() => removeItem(idx)}>Quitar</button>
+                        <button type="button" className="wf-link-danger col-span-1" onClick={() => removeItem(idx)}>Quitar</button>
                       </div>
                       {it.notes && <p className={`text-xs ${missing ? 'text-red-600' : 'text-gray-400'}`}>{it.notes}</p>}
                     </div>
@@ -397,16 +397,16 @@ export default function CommercialEditorPage() {
                 onChange={e => setC('proof', content.proof.map((x, j) => j === i ? { ...x, company: e.target.value } : x))} />
               <input className={`${smallInput} col-span-7`} value={p.result} placeholder="Resultado"
                 onChange={e => setC('proof', content.proof.map((x, j) => j === i ? { ...x, result: e.target.value } : x))} />
-              <button type="button" className="text-xs text-red-600 hover:underline col-span-1"
+              <button type="button" className="wf-link-danger col-span-1"
                 onClick={() => setC('proof', content.proof.filter((_, j) => j !== i))}>Quitar</button>
             </div>
           ))}
           {content.faq.map((f, i) => (
-            <div key={i} className="border border-gray-200 rounded-lg p-3 space-y-2">
+            <div key={i} className="space-y-2 rounded-xl border border-gray-200 bg-gray-50/60 p-3">
               <div className="flex gap-2">
                 <input className={inputClass} value={f.q} placeholder="Pregunta"
                   onChange={e => setC('faq', content.faq.map((x, j) => j === i ? { ...x, q: e.target.value } : x))} />
-                <button type="button" className="text-xs text-red-600 hover:underline"
+                <button type="button" className="wf-link-danger"
                   onClick={() => setC('faq', content.faq.filter((_, j) => j !== i))}>Quitar</button>
               </div>
               <textarea rows={2} className={inputClass} value={f.a}
@@ -418,22 +418,23 @@ export default function CommercialEditorPage() {
         </Card>
       </fieldset>
 
-      {error && <p className="text-sm text-red-600">{error}</p>}
-      {msg && !error && <p className="text-sm text-gray-500">{msg}</p>}
+      {error && <p className="wf-alert wf-alert-error">{error}</p>}
 
-      <div className="flex flex-wrap gap-3 pb-10">
+      <div className="sticky bottom-4 z-10 flex flex-wrap items-center gap-3 rounded-2xl border border-gray-200 bg-white/95 p-3 shadow-[0_8px_30px_rgba(15,42,55,0.12)] backdrop-blur">
+        {msg && !error && <span className="wf-hint order-last w-full sm:order-none sm:ml-1 sm:w-auto">{msg}</span>}
+        <span className="hidden flex-1 sm:block" />
         {editable && (
           <button onClick={() => save()} disabled={saving || !dirty}
-            className="text-sm px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-50">
+            className="wf-btn-ghost">
             {saving ? 'Guardando…' : 'Guardar cambios'}
           </button>
         )}
-        <button onClick={preview} className="text-sm px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50">
+        <button onClick={preview} className="wf-btn-ghost">
           Vista previa
         </button>
         {editable && (
           <button onClick={send} disabled={sending}
-            className="text-sm px-5 py-2 rounded-lg bg-gray-900 text-white hover:bg-gray-800 disabled:opacity-50">
+            className="wf-btn">
             {sending ? 'Enviando…' : `Aprobar y enviar${proposal.prospect_email ? ` a ${proposal.prospect_email}` : ''}`}
           </button>
         )}

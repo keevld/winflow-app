@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import WebsiteAutofill from './WebsiteAutofill'
+import { IconCheck, PageHeader } from '../ui'
 import type {
   Client, BrandVoice, SalesProcess, Product, Pricing, PainPoint, SuccessStory, Objection,
 } from '@/lib/types'
@@ -89,18 +90,25 @@ export default function SettingsClient(props: Props) {
   const [tab, setTab] = useState<TabKey>('agency')
 
   return (
-    <div className="max-w-3xl space-y-6">
-      <h1 className="text-xl font-bold text-gray-900">Perfil de la agencia</h1>
+    <div className="mx-auto max-w-4xl space-y-6">
+      <PageHeader
+        title="Perfil de la agencia"
+        subtitle="Mientras más completo, más suenan tus propuestas a ti y menos las tienes que editar."
+      />
 
-      <div className="flex gap-1 border-b border-gray-200">
+      <Completeness props={props} onGo={setTab} />
+
+      <div className="-mx-1 flex gap-1 overflow-x-auto px-1 pb-1" role="tablist">
         {TABS.map(t => (
           <button
             key={t.key}
+            role="tab"
+            aria-selected={tab === t.key}
             onClick={() => setTab(t.key)}
-            className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px ${
+            className={`shrink-0 rounded-full px-4 py-2 text-sm font-medium transition-colors ${
               tab === t.key
-                ? 'border-gray-900 text-gray-900'
-                : 'border-transparent text-gray-400 hover:text-gray-600'
+                ? 'bg-gray-900 text-white'
+                : 'bg-white text-gray-600 ring-1 ring-inset ring-gray-200 hover:text-gray-900 hover:ring-gray-400'
             }`}
           >
             {t.label}
@@ -129,17 +137,62 @@ export default function SettingsClient(props: Props) {
   )
 }
 
+// Medidor: qué tan listo está el perfil para generar propuestas que suenen a la agencia.
+function Completeness({ props, onGo }: { props: Props; onGo: (t: TabKey) => void }) {
+  const b = props.initialBrand
+  const c = props.initialClient
+  const items: { label: string; done: boolean; tab: TabKey }[] = [
+    { label: 'Logo', done: !!b?.logo_base64, tab: 'agency' },
+    { label: 'Quiénes somos', done: !!b?.about_agency?.trim(), tab: 'agency' },
+    { label: 'Tono de marca', done: !!b?.tone?.trim(), tab: 'agency' },
+    { label: 'Link para agendar', done: !!(c?.booking_url?.trim() || c?.calendly_url?.trim()), tab: 'agency' },
+    { label: 'Proceso de ventas', done: !!props.initialSalesProcess, tab: 'sales' },
+    { label: 'Productos', done: props.initialProducts.length > 0, tab: 'products' },
+    { label: 'Precios', done: props.initialPricing.length > 0, tab: 'products' },
+    { label: 'Casos de éxito', done: props.initialSuccessStories.length > 0, tab: 'knowledge' },
+    { label: 'Objeciones', done: props.initialObjections.length > 0, tab: 'knowledge' },
+  ]
+  const done = items.filter(i => i.done).length
+  const pct = Math.round((done / items.length) * 100)
+  const missing = items.filter(i => !i.done)
+
+  return (
+    <div className="wf-card !space-y-3">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h2 className="wf-card-title">{pct === 100 ? 'Tu perfil está completo' : 'Qué tan listo está tu perfil'}</h2>
+        <span className="text-sm font-medium text-gray-700">{done} de {items.length}</span>
+      </div>
+      <div className="h-2 overflow-hidden rounded-full bg-gray-100" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100}>
+        <div className="h-full rounded-full bg-brand-teal transition-all" style={{ width: `${pct}%` }} />
+      </div>
+      {missing.length > 0 ? (
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="wf-hint">Te falta:</span>
+          {missing.map(i => (
+            <button key={i.label} onClick={() => onGo(i.tab)}
+              className="wf-pill bg-brand-peach/50 text-[#7a4a12] transition-colors hover:bg-brand-peach">
+              {i.label}
+            </button>
+          ))}
+        </div>
+      ) : (
+        <p className="wf-hint flex items-center gap-1.5"><IconCheck className="h-3.5 w-3.5 text-brand-teal" /> Las propuestas ya usan todo lo que sabemos de tu agencia.</p>
+      )}
+    </div>
+  )
+}
+
 // ─────────────────────────────────────────────────────────────────────────
 // Shared bits
 // ─────────────────────────────────────────────────────────────────────────
 
 function SaveBar({ saving, msg, onSave }: { saving: boolean; msg: string; onSave: () => void }) {
   return (
-    <div className="flex items-center gap-3">
+    <div className="flex items-center gap-3 border-t border-gray-200 pt-4">
       <button
         onClick={onSave}
         disabled={saving}
-        className="text-sm px-4 py-2 rounded-lg bg-gray-900 text-white hover:bg-gray-800 disabled:opacity-50"
+        className="wf-btn"
       >
         {saving ? 'Guardando...' : 'Guardar cambios'}
       </button>
@@ -151,13 +204,13 @@ function SaveBar({ saving, msg, onSave }: { saving: boolean; msg: string; onSave
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <label className="block text-xs font-medium text-gray-500 mb-1">{label}</label>
+      <label className="mb-1 block text-xs font-medium text-gray-600">{label}</label>
       {children}
     </div>
   )
 }
 
-const inputCls = 'w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900'
+const inputCls = 'wf-input'
 const textareaCls = inputCls + ' resize-y'
 
 
@@ -319,9 +372,9 @@ function AgencySection({ initialClient, initialBrand, productNames }: { initialC
         onApplyFields={fields => setForm(f => ({ ...f, ...fields }))}
       />
 
-      <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
-        <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide">Datos generales</h2>
-        <div className="grid grid-cols-2 gap-4">
+      <div className="wf-card">
+        <h2 className="wf-card-title">Datos generales</h2>
+        <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Empresa"><input className={inputCls} value={form.company_name} onChange={e => set('company_name', e.target.value)} /></Field>
           <Field label="Industria"><input className={inputCls} value={form.industry} onChange={e => set('industry', e.target.value)} /></Field>
           <Field label="Sitio web"><input className={inputCls} value={form.website} onChange={e => set('website', e.target.value)} /></Field>
@@ -333,14 +386,14 @@ function AgencySection({ initialClient, initialBrand, productNames }: { initialC
         </div>
       </div>
 
-      <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
-        <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide">Marca y voz</h2>
+      <div className="wf-card">
+        <h2 className="wf-card-title">Marca y voz</h2>
         <Field label="Logo de la agencia">
           <div
             onDragOver={e => { e.preventDefault(); setDragOver(true) }}
             onDragLeave={() => setDragOver(false)}
             onDrop={e => { e.preventDefault(); setDragOver(false); handleLogoFile(e.dataTransfer.files?.[0]) }}
-            className={`flex items-center gap-4 rounded-xl border-2 border-dashed p-4 transition-colors ${dragOver ? 'border-gray-900 bg-gray-50' : 'border-gray-200'}`}
+            className={`flex items-center gap-4 rounded-xl border-2 border-dashed p-4 transition-colors ${dragOver ? 'border-brand-teal bg-brand-mint-soft/40' : 'border-gray-200'}`}
           >
             <div
               className="w-40 h-20 rounded-lg border border-gray-200 flex items-center justify-center overflow-hidden shrink-0"
@@ -353,7 +406,7 @@ function AgencySection({ initialClient, initialBrand, productNames }: { initialC
             </div>
             <div className="space-y-2">
               <div className="flex items-center gap-3">
-                <label className={`inline-flex items-center rounded-lg bg-gray-900 px-3.5 py-2 text-sm font-medium text-white cursor-pointer hover:bg-gray-700 ${logoBusy ? 'opacity-60 pointer-events-none' : ''}`}>
+                <label className={`wf-btn wf-btn-sm cursor-pointer ${logoBusy ? 'opacity-60 pointer-events-none' : ''}`}>
                   {logoBusy ? 'Procesando...' : form.logo_base64 ? 'Cambiar logo' : 'Subir logo'}
                   <input type="file" accept="image/png,image/jpeg,image/webp" className="sr-only"
                     onChange={e => { handleLogoFile(e.target.files?.[0]); e.target.value = '' }} />
@@ -367,7 +420,7 @@ function AgencySection({ initialClient, initialBrand, productNames }: { initialC
                     onClick={() => { set('logo_base64', logoOriginal); setMsg('Original restaurado. Pulsa Guardar para aplicarlo.') }}>Restaurar original</button>
                 )}
                 {form.logo_base64 && (
-                  <button type="button" className="text-sm text-red-600 hover:underline"
+                  <button type="button" className="wf-link-danger !text-sm"
                     onClick={() => { set('logo_base64', ''); setMsg('Logo quitado. Pulsa Guardar para aplicarlo.') }}>Quitar</button>
                 )}
               </div>
@@ -375,7 +428,7 @@ function AgencySection({ initialClient, initialBrand, productNames }: { initialC
             </div>
           </div>
         </Field>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Color primario">
             <div className="flex items-center gap-2">
               <input type="color" value={form.primary_color} onChange={e => set('primary_color', e.target.value)} className="w-9 h-9 rounded border border-gray-200" />
@@ -398,8 +451,8 @@ function AgencySection({ initialClient, initialBrand, productNames }: { initialC
         <Field label="Notas de estilo para las propuestas"><textarea rows={2} className={textareaCls} value={form.proposal_style_notes} onChange={e => set('proposal_style_notes', e.target.value)} /></Field>
       </div>
 
-      <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
-        <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide">Quiénes somos y condiciones</h2>
+      <div className="wf-card">
+        <h2 className="wf-card-title">Quiénes somos y condiciones</h2>
         <Field label="Sobre la agencia (años, presencia, clientes, qué hacen)">
           <textarea rows={4} className={textareaCls} value={form.about_agency} onChange={e => set('about_agency', e.target.value)} />
         </Field>
@@ -466,9 +519,9 @@ function SalesProcessSection({ initial }: { initial: SalesProcess | null }) {
 
   return (
     <div className="space-y-6">
-      <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
-        <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide">Ciclo de venta</h2>
-        <div className="grid grid-cols-2 gap-4">
+      <div className="wf-card">
+        <h2 className="wf-card-title">Ciclo de venta</h2>
+        <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Duración promedio del ciclo (días)">
             <input type="number" className={inputCls} value={form.avg_cycle_days} onChange={e => set('avg_cycle_days', e.target.value)} />
           </Field>
@@ -492,10 +545,10 @@ function SalesProcessSection({ initial }: { initial: SalesProcess | null }) {
         )}
       </div>
 
-      <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
-        <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide">Cadencia de seguimiento</h2>
+      <div className="wf-card">
+        <h2 className="wf-card-title">Cadencia de seguimiento</h2>
         <p className="text-xs text-gray-400">Días después del envío para cada recordatorio. Son el ritmo «normal»: Winflow los acorta o los estira por propuesta según el sector del prospecto, su tamaño y lo que se habló en la llamada (un comité o un sector de decisión lenta recibe seguimientos más espaciados). Puedes cambiar el ritmo en cada propuesta.</p>
-        <label className="flex gap-3 items-start text-sm bg-gray-50 border border-gray-200 rounded-lg p-3">
+        <label className="flex items-start gap-3 rounded-xl border border-gray-200 bg-gray-50 p-3 text-sm">
           <input type="checkbox" className="mt-1" checked={form.followup_auto} onChange={e => set('followup_auto', e.target.checked)} />
           <span>
             <span className="font-medium text-gray-900">Enviar los seguimientos automáticamente</span>
@@ -506,7 +559,7 @@ function SalesProcessSection({ initial }: { initial: SalesProcess | null }) {
             </span>
           </span>
         </label>
-        <div className="grid grid-cols-4 gap-4">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <Field label="1er seguimiento (día)"><input type="number" className={inputCls} value={form.followup_day1} onChange={e => set('followup_day1', Number(e.target.value))} /></Field>
           <Field label="2do seguimiento (día)"><input type="number" className={inputCls} value={form.followup_day2} onChange={e => set('followup_day2', Number(e.target.value))} /></Field>
           <Field label="3er seguimiento (día)"><input type="number" className={inputCls} value={form.followup_day3} onChange={e => set('followup_day3', Number(e.target.value))} /></Field>
@@ -601,8 +654,8 @@ function ProductsSection({ initialProducts, initialPricing }: { initialProducts:
 
   return (
     <div className="space-y-6">
-      <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
-        <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide">Productos</h2>
+      <div className="wf-card">
+        <h2 className="wf-card-title">Productos</h2>
         {products.length === 0 && <p className="text-sm text-gray-400">Sin productos todavía.</p>}
         <div className="divide-y divide-gray-100">
           {products.map(p => (
@@ -611,25 +664,25 @@ function ProductsSection({ initialProducts, initialPricing }: { initialProducts:
                 <p className="text-sm font-medium text-gray-900">{p.name}{p.category ? ` · ${p.category}` : ''}</p>
                 {p.description && <p className="text-xs text-gray-500 mt-0.5">{p.description}</p>}
               </div>
-              <button onClick={() => handleDeleteProduct(p.id)} className="text-xs text-red-500 hover:text-red-700 shrink-0">Eliminar</button>
+              <button onClick={() => handleDeleteProduct(p.id)} className="wf-link-danger shrink-0">Eliminar</button>
             </div>
           ))}
         </div>
-        <div className="border-t border-gray-100 pt-4 grid grid-cols-3 gap-3">
+        <div className="border-t border-gray-100 pt-4 grid gap-3 sm:grid-cols-3">
           <input className={inputCls} placeholder="Nombre del producto" value={newProduct.name} onChange={e => setNewProduct(f => ({ ...f, name: e.target.value }))} />
           <input className={inputCls} placeholder="Categoría (opcional)" value={newProduct.category} onChange={e => setNewProduct(f => ({ ...f, category: e.target.value }))} />
           <input className={inputCls} placeholder="Descripción (opcional)" value={newProduct.description} onChange={e => setNewProduct(f => ({ ...f, description: e.target.value }))} />
         </div>
         <div className="flex items-center gap-3">
-          <button onClick={handleAddProduct} disabled={addingProduct} className="text-sm px-4 py-2 rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-50">
+          <button onClick={handleAddProduct} disabled={addingProduct} className="wf-btn-ghost">
             {addingProduct ? 'Agregando...' : '+ Agregar producto'}
           </button>
-          {productError && <span className="text-xs text-red-600">{productError}</span>}
+          {productError && <span className="text-xs text-brand-coral">{productError}</span>}
         </div>
       </div>
 
-      <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
-        <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide">Precios</h2>
+      <div className="wf-card">
+        <h2 className="wf-card-title">Precios</h2>
         {pricing.length === 0 && <p className="text-sm text-gray-400">Sin precios todavía.</p>}
         <div className="divide-y divide-gray-100">
           {pricing.map(p => (
@@ -642,14 +695,14 @@ function ProductsSection({ initialProducts, initialPricing }: { initialProducts:
                   {p.billing_period ? ` / ${p.billing_period}` : ''}
                 </p>
                 {p.includes && <p className="text-xs text-gray-500 mt-0.5">Incluye: {p.includes}</p>}
-                {p.negotiable && <p className="text-xs text-amber-600 mt-0.5">Negociable</p>}
+                {p.negotiable && <p className="mt-0.5 text-xs text-brand-teal">Negociable</p>}
               </div>
-              <button onClick={() => handleDeletePrice(p.id)} className="text-xs text-red-500 hover:text-red-700 shrink-0">Eliminar</button>
+              <button onClick={() => handleDeletePrice(p.id)} className="wf-link-danger shrink-0">Eliminar</button>
             </div>
           ))}
         </div>
         <div className="border-t border-gray-100 pt-4 space-y-3">
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid gap-3 sm:grid-cols-3">
             <select className={inputCls} value={newPrice.product_id} onChange={e => setNewPrice(f => ({ ...f, product_id: e.target.value }))}>
               <option value="">General (sin producto específico)</option>
               {products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
@@ -661,7 +714,7 @@ function ProductsSection({ initialProducts, initialPricing }: { initialProducts:
             </select>
             <input className={inputCls} placeholder="Moneda (USD, MXN...)" value={newPrice.currency} onChange={e => setNewPrice(f => ({ ...f, currency: e.target.value }))} />
           </div>
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid gap-3 sm:grid-cols-3">
             <input type="number" className={inputCls} placeholder="Monto" value={newPrice.price_amount} onChange={e => setNewPrice(f => ({ ...f, price_amount: e.target.value }))} />
             <input type="number" className={inputCls} placeholder="Mínimo (si es rango)" value={newPrice.price_min} onChange={e => setNewPrice(f => ({ ...f, price_min: e.target.value }))} />
             <input type="number" className={inputCls} placeholder="Máximo (si es rango)" value={newPrice.price_max} onChange={e => setNewPrice(f => ({ ...f, price_max: e.target.value }))} />
@@ -673,10 +726,10 @@ function ProductsSection({ initialProducts, initialPricing }: { initialProducts:
             Es negociable
           </label>
           <div className="flex items-center gap-3">
-            <button onClick={handleAddPrice} disabled={addingPrice} className="text-sm px-4 py-2 rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-50">
+            <button onClick={handleAddPrice} disabled={addingPrice} className="wf-btn-ghost">
               {addingPrice ? 'Agregando...' : '+ Agregar precio'}
             </button>
-            {priceError && <span className="text-xs text-red-600">{priceError}</span>}
+            {priceError && <span className="text-xs text-brand-coral">{priceError}</span>}
           </div>
         </div>
       </div>
@@ -735,8 +788,8 @@ function PainPointsCard({ initial }: { initial: PainPoint[] }) {
   }
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
-      <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide">Pain points</h2>
+    <div className="wf-card">
+      <h2 className="wf-card-title">Pain points</h2>
       <p className="text-xs text-gray-400">Los dolores que tus clientes mencionan antes de comprar. Es lo que la IA usa para conectar con el prospecto.</p>
       {items.length === 0 && <p className="text-sm text-gray-400">Sin pain points todavía.</p>}
       <div className="divide-y divide-gray-100">
@@ -746,7 +799,7 @@ function PainPointsCard({ initial }: { initial: PainPoint[] }) {
               <p className="text-sm text-gray-900">{i.pain}</p>
               {i.impact && <p className="text-xs text-gray-500 mt-0.5">Impacto: {i.impact}</p>}
             </div>
-            <button onClick={() => handleDelete(i.id)} className="text-xs text-red-500 hover:text-red-700 shrink-0">Eliminar</button>
+            <button onClick={() => handleDelete(i.id)} className="wf-link-danger shrink-0">Eliminar</button>
           </div>
         ))}
       </div>
@@ -754,10 +807,10 @@ function PainPointsCard({ initial }: { initial: PainPoint[] }) {
         <textarea rows={2} className={textareaCls} placeholder="Ej. Pierden tiempo armando propuestas a mano" value={form.pain} onChange={e => setForm(f => ({ ...f, pain: e.target.value }))} />
         <input className={inputCls} placeholder="Impacto en el negocio (opcional)" value={form.impact} onChange={e => setForm(f => ({ ...f, impact: e.target.value }))} />
         <div className="flex items-center gap-3">
-          <button onClick={handleAdd} disabled={adding} className="text-sm px-4 py-2 rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-50">
+          <button onClick={handleAdd} disabled={adding} className="wf-btn-ghost">
             {adding ? 'Agregando...' : '+ Agregar pain point'}
           </button>
-          {error && <span className="text-xs text-red-600">{error}</span>}
+          {error && <span className="text-xs text-brand-coral">{error}</span>}
         </div>
       </div>
     </div>
@@ -795,8 +848,8 @@ function SuccessStoriesCard({ initial }: { initial: SuccessStory[] }) {
   }
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
-      <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide">Casos de éxito</h2>
+    <div className="wf-card">
+      <h2 className="wf-card-title">Casos de éxito</h2>
       <p className="text-xs text-gray-400">Ejemplos reales de clientes que resolviste — la IA los usa como prueba social en la propuesta.</p>
       {items.length === 0 && <p className="text-sm text-gray-400">Sin casos de éxito todavía.</p>}
       <div className="divide-y divide-gray-100">
@@ -808,12 +861,12 @@ function SuccessStoriesCard({ initial }: { initial: SuccessStory[] }) {
               {i.solution && <p className="text-xs text-gray-500">Solución: {i.solution}</p>}
               <p className="text-xs text-gray-700 mt-0.5">Resultado: {i.result}</p>
             </div>
-            <button onClick={() => handleDelete(i.id)} className="text-xs text-red-500 hover:text-red-700 shrink-0">Eliminar</button>
+            <button onClick={() => handleDelete(i.id)} className="wf-link-danger shrink-0">Eliminar</button>
           </div>
         ))}
       </div>
       <div className="border-t border-gray-100 pt-4 space-y-3">
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid gap-3 sm:grid-cols-2">
           <input className={inputCls} placeholder="Empresa (puede ser anónimo, ej. 'agencia de marketing en CDMX')" value={form.company_example} onChange={e => setForm(f => ({ ...f, company_example: e.target.value }))} />
           <input className={inputCls} placeholder="Industria relevante" value={form.relevant_for_industry} onChange={e => setForm(f => ({ ...f, relevant_for_industry: e.target.value }))} />
         </div>
@@ -821,10 +874,10 @@ function SuccessStoriesCard({ initial }: { initial: SuccessStory[] }) {
         <input className={inputCls} placeholder="Qué hiciste (solución)" value={form.solution} onChange={e => setForm(f => ({ ...f, solution: e.target.value }))} />
         <textarea rows={2} className={textareaCls} placeholder="Resultado (con números si es posible, ej. 'redujo 40% el tiempo de cierre')" value={form.result} onChange={e => setForm(f => ({ ...f, result: e.target.value }))} />
         <div className="flex items-center gap-3">
-          <button onClick={handleAdd} disabled={adding} className="text-sm px-4 py-2 rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-50">
+          <button onClick={handleAdd} disabled={adding} className="wf-btn-ghost">
             {adding ? 'Agregando...' : '+ Agregar caso de éxito'}
           </button>
-          {error && <span className="text-xs text-red-600">{error}</span>}
+          {error && <span className="text-xs text-brand-coral">{error}</span>}
         </div>
       </div>
     </div>
@@ -862,8 +915,8 @@ function ObjectionsCard({ initial }: { initial: Objection[] }) {
   }
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
-      <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide">Objeciones frecuentes</h2>
+    <div className="wf-card">
+      <h2 className="wf-card-title">Objeciones frecuentes</h2>
       <p className="text-xs text-gray-400">Lo que dicen los prospectos para dudar, y cómo respondes — la IA las anticipa en la propuesta.</p>
       {items.length === 0 && <p className="text-sm text-gray-400">Sin objeciones todavía.</p>}
       <div className="divide-y divide-gray-100">
@@ -873,7 +926,7 @@ function ObjectionsCard({ initial }: { initial: Objection[] }) {
               <p className="text-sm text-gray-900">&ldquo;{i.objection}&rdquo;</p>
               <p className="text-xs text-gray-500 mt-0.5">→ {i.response}</p>
             </div>
-            <button onClick={() => handleDelete(i.id)} className="text-xs text-red-500 hover:text-red-700 shrink-0">Eliminar</button>
+            <button onClick={() => handleDelete(i.id)} className="wf-link-danger shrink-0">Eliminar</button>
           </div>
         ))}
       </div>
@@ -881,10 +934,10 @@ function ObjectionsCard({ initial }: { initial: Objection[] }) {
         <input className={inputCls} placeholder="Ej. 'Ya usamos plantillas'" value={form.objection} onChange={e => setForm(f => ({ ...f, objection: e.target.value }))} />
         <textarea rows={2} className={textareaCls} placeholder="Tu respuesta a esa objeción" value={form.response} onChange={e => setForm(f => ({ ...f, response: e.target.value }))} />
         <div className="flex items-center gap-3">
-          <button onClick={handleAdd} disabled={adding} className="text-sm px-4 py-2 rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-50">
+          <button onClick={handleAdd} disabled={adding} className="wf-btn-ghost">
             {adding ? 'Agregando...' : '+ Agregar objeción'}
           </button>
-          {error && <span className="text-xs text-red-600">{error}</span>}
+          {error && <span className="text-xs text-brand-coral">{error}</span>}
         </div>
       </div>
     </div>

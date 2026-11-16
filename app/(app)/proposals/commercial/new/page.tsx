@@ -4,6 +4,7 @@ import { Suspense, useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import type { PricingMode } from '@/lib/commercial'
+import { Loading, PageHeader } from '../../../ui'
 
 const SIZES = ['1–10 personas', '11–50 personas', '51–200 personas', '201–500 personas', '500+ personas']
 
@@ -107,19 +108,21 @@ function NewCommercialForm() {
     }
   }
 
-  const inputClass = 'w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900'
-  const labelClass = 'block text-sm font-medium text-gray-700 mb-1'
+  const inputClass = 'wf-input'
+  const labelClass = 'wf-label'
 
   return (
-    <div className="max-w-2xl">
-      <h1 className="text-xl font-bold text-gray-900 mb-1">Nueva propuesta comercial</h1>
-      <p className="text-sm text-gray-500 mb-6">
-        Para después de la llamada: con lo que se habló, Winflow arma el alcance, las opciones y los precios de tu catálogo.
-      </p>
+    <div className="space-y-6">
+      <PageHeader
+        back={fromId ? { href: `/proposals/${fromId}`, label: 'Propuesta inicial' } : { href: '/dashboard', label: 'Propuestas' }}
+        title="Nueva propuesta comercial"
+        subtitle="Para después de la llamada: con lo que se habló, Winflow arma el alcance, las opciones y los precios de tu catálogo."
+      />
 
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
-          <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide">El prospecto</h2>
+      <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_280px]">
+      <form onSubmit={handleSubmit} className="min-w-0 space-y-6">
+        <div className="wf-card">
+          <h2 className="wf-card-title">El prospecto</h2>
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className={labelClass}>Nombre</label>
@@ -155,8 +158,8 @@ function NewCommercialForm() {
           </div>
         </div>
 
-        <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
-          <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide">Lo que se habló en la llamada</h2>
+        <div className="wf-card">
+          <h2 className="wf-card-title">Lo que se habló en la llamada</h2>
           <div>
             <label className={labelClass}>Notas o transcripción</label>
             <textarea required rows={10} className={inputClass} value={form.call_notes}
@@ -176,8 +179,8 @@ function NewCommercialForm() {
           </div>
         </div>
 
-        <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
-          <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide">Qué se propone</h2>
+        <div className="wf-card">
+          <h2 className="wf-card-title">Qué se propone</h2>
           <div>
             <label className={labelClass}>Servicios a incluir</label>
             {products.length === 0 ? (
@@ -201,7 +204,7 @@ function NewCommercialForm() {
             <label className={labelClass}>Cómo presentar los precios</label>
             <div className="space-y-2">
               {MODES.map(m => (
-                <label key={m.value} className={`flex gap-3 border rounded-lg p-3 cursor-pointer ${mode === m.value ? 'border-gray-900 bg-gray-50' : 'border-gray-200'}`}>
+                <label key={m.value} className={`flex cursor-pointer gap-3 rounded-xl border p-3.5 transition-colors ${mode === m.value ? 'border-brand-teal bg-brand-mint-soft/50 ring-1 ring-brand-teal/30' : 'border-gray-200 hover:border-gray-300'}`}>
                   <input type="radio" name="mode" checked={mode === m.value} onChange={() => setMode(m.value)} className="mt-1" />
                   <span>
                     <span className="block text-sm font-medium text-gray-900">{m.title}</span>
@@ -213,20 +216,31 @@ function NewCommercialForm() {
           </div>
         </div>
 
-        {error && <p className="text-sm text-red-600">{error}</p>}
+        {error && <p className="wf-alert wf-alert-error">{error}</p>}
 
         <button type="submit" disabled={loading}
-          className="w-full bg-gray-900 text-white py-3 rounded-xl text-sm font-medium hover:bg-gray-800 disabled:opacity-50">
+          className="wf-btn wf-btn-lg w-full">
           {loading ? 'Generando propuesta comercial… (puede tardar hasta un minuto)' : 'Generar propuesta comercial'}
         </button>
       </form>
+
+      <aside className="wf-card lg:sticky lg:top-24">
+        <h2 className="wf-card-title">Qué recibe tu cliente</h2>
+        <ul className="space-y-2 text-sm text-gray-600">
+          <li>Alcance y entregables con base en la llamada.</li>
+          <li>Precios solo de tu catálogo: Winflow no inventa cifras.</li>
+          <li>Botón de aceptación y seguimiento automático.</li>
+        </ul>
+        <p className="wf-hint border-t border-gray-100 pt-3">Antes de enviarla podrás editar cada línea.</p>
+      </aside>
+      </div>
     </div>
   )
 }
 
 export default function NewCommercialPage() {
   return (
-    <Suspense fallback={<div className="text-sm text-gray-400 py-20 text-center">Cargando...</div>}>
+    <Suspense fallback={<Loading />}>
       <NewCommercialForm />
     </Suspense>
   )

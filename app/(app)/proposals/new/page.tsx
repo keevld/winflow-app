@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { nanoid } from 'nanoid'
+import { PageHeader } from '../../ui'
 
 const OTHER = '__other__'
 const SIZES = ['1–10 personas', '11–50 personas', '51–200 personas', '201–500 personas', '500+ personas']
@@ -117,16 +118,21 @@ export default function NewProposalPage() {
     }
   }
 
-  const inputClass = 'w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900'
-  const labelClass = 'block text-sm font-medium text-gray-700 mb-1'
+  const inputClass = 'wf-input'
+  const labelClass = 'wf-label'
 
   return (
-    <div className="max-w-2xl">
-      <h1 className="text-xl font-bold text-gray-900 mb-6">Nueva propuesta</h1>
+    <div className="space-y-6">
+      <PageHeader
+        back={{ href: '/dashboard', label: 'Propuestas' }}
+        title="Nueva propuesta"
+        subtitle="Cuéntanos del prospecto. Winflow escribe la propuesta con tu tono, tus precios y lo que encuentra de su negocio."
+      />
 
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
-          <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide">Datos del prospecto</h2>
+      <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_280px]">
+      <form onSubmit={handleSubmit} className="min-w-0 space-y-6">
+        <div className="wf-card">
+          <h2 className="wf-card-title">Datos del prospecto</h2>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
@@ -154,11 +160,11 @@ export default function NewProposalPage() {
                 onChange={e => set('prospect_email', e.target.value)} placeholder="ana@empresa.com" />
             </div>
             <div>
-              <label className={labelClass}>Sitio web <span className="text-amber-600 font-medium">· muy recomendado</span></label>
+              <label className={labelClass}>Sitio web <span className="font-medium text-brand-teal">· muy recomendado</span></label>
               <input type="url" className={inputClass} value={form.prospect_website}
                 onChange={e => set('prospect_website', e.target.value)} placeholder="https://empresa.com" />
               {!form.prospect_website.trim() && (
-                <p className="mt-1.5 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-md px-2.5 py-1.5">
+                <p className="wf-alert wf-alert-warn mt-1.5 !rounded-xl !p-2.5 text-xs">
                   Altamente recomendable para una propuesta más precisa: con el sitio web la adaptamos a su negocio. Sin él, solo nos apoyamos en tus notas.
                 </p>
               )}
@@ -181,8 +187,8 @@ export default function NewProposalPage() {
           </div>
         </div>
 
-        <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
-          <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide">La oportunidad</h2>
+        <div className="wf-card">
+          <h2 className="wf-card-title">La oportunidad</h2>
 
           <div>
             <label className={labelClass}>Servicio a proponer</label>
@@ -197,7 +203,7 @@ export default function NewProposalPage() {
                 <input required autoFocus className={inputClass} value={customService}
                   onChange={e => setCustomService(e.target.value)}
                   placeholder="Ej. Diseño de identidad de marca" />
-                <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                <p className="wf-alert wf-alert-warn !rounded-xl !p-3 text-xs">
                   Este servicio no está en tu catálogo, así que la propuesta no incluirá precios ni casos de éxito específicos. Para mejores resultados, cárgalo en Ajustes → Productos.
                 </p>
                 {isAdmin && (
@@ -218,16 +224,27 @@ export default function NewProposalPage() {
           </div>
         </div>
 
-        {error && <p className="text-sm text-red-600">{error}</p>}
+        {error && <p className="wf-alert wf-alert-error">{error}</p>}
 
         <button
           type="submit"
           disabled={loading}
-          className="w-full bg-gray-900 text-white py-3 rounded-xl text-sm font-medium hover:bg-gray-800 disabled:opacity-50"
+          className="wf-btn wf-btn-lg w-full"
         >
           {loading ? 'Creando propuesta...' : 'Generar propuesta personalizada'}
         </button>
       </form>
+
+      <aside className="wf-card lg:sticky lg:top-24">
+        <h2 className="wf-card-title">Qué pasa al generar</h2>
+        <ol className="space-y-3 text-sm text-gray-600">
+          <li className="flex gap-3"><span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-brand-mint-soft text-xs font-semibold text-brand-navy">1</span>Winflow lee el sitio del prospecto y cruza tus notas con tu catálogo.</li>
+          <li className="flex gap-3"><span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-brand-mint-soft text-xs font-semibold text-brand-navy">2</span>En menos de un minuto tienes propuesta, PDF y correo listos.</li>
+          <li className="flex gap-3"><span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-brand-mint-soft text-xs font-semibold text-brand-navy">3</span>Revisas, editas lo que quieras y tú das el clic para enviar.</li>
+        </ol>
+        <p className="wf-hint border-t border-gray-100 pt-3">Mientras más contexto des en «dolor o contexto», más específica sale.</p>
+      </aside>
+      </div>
     </div>
   )
 }

@@ -69,21 +69,21 @@ export default function FollowupsCard({
   const fmt = (iso: string | null) => (iso ? new Date(iso).toLocaleDateString('es-MX', { day: 'numeric', month: 'short' }) : '')
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-5 space-y-3">
-      <div className="flex items-center justify-between gap-3">
-        <h2 className="text-sm font-semibold text-gray-700">Seguimientos automáticos</h2>
+    <div className="wf-card !space-y-3">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h2 className="wf-card-title">Seguimientos automáticos</h2>
         {!stopped && (
           <button
             onClick={togglePause}
             disabled={busy}
-            className="text-xs px-3 py-1.5 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+            className="wf-btn-ghost wf-btn-sm shrink-0"
           >
             {paused ? 'Reanudar seguimientos' : 'Pausar seguimientos'}
           </button>
         )}
       </div>
       {stopped && <p className="text-xs text-gray-500">Ya no se envían seguimientos: {stopped}.</p>}
-      {!stopped && paused && <p className="text-xs text-amber-700">En pausa: no se enviarán más seguimientos de esta propuesta hasta que los reanudes.</p>}
+      {!stopped && paused && <p className="wf-alert wf-alert-warn !rounded-xl !p-3 text-xs">En pausa: no se enviarán más seguimientos de esta propuesta hasta que los reanudes.</p>}
       {!stopped && (
         <div className="flex flex-wrap items-center gap-2 text-xs text-gray-600">
           <label htmlFor="rhythm">Ritmo de seguimiento</label>
@@ -91,7 +91,7 @@ export default function FollowupsCard({
             id="rhythm"
             value={rhythm}
             onChange={e => changeRhythm(e.target.value)}
-            className="border border-gray-300 rounded-lg px-2 py-1 text-xs"
+            className="wf-input-sm !py-1 text-xs"
           >
             <option value="auto">Automático (según sector y notas)</option>
             <option value="fast">Rápido: se acortan los días</option>
@@ -106,8 +106,8 @@ export default function FollowupsCard({
       ) : (
         <ul className="space-y-1.5">
           {rows.map(r => (
-            <li key={r.attempt} className="text-sm text-gray-700 flex gap-2">
-              <span className="text-gray-400 w-24 shrink-0">Seguimiento {r.attempt}</span>
+            <li key={r.attempt} className="border-l-2 border-brand-mint pl-3 text-sm text-gray-700">
+              <span className="block text-xs text-gray-400">Seguimiento {r.attempt}</span>
               <span>
                 {LABEL[r.status]} {fmt(r.sent_at ?? r.created_at)}
                 {r.subject ? <span className="text-gray-500"> · «{r.subject}»</span> : null}
@@ -116,7 +116,7 @@ export default function FollowupsCard({
           ))}
         </ul>
       )}
-      {error && <p className="text-xs text-red-600">{error}</p>}
+      {error && <p className="text-xs text-brand-coral">{error}</p>}
     </div>
   )
 }

@@ -67,3 +67,32 @@ body {
 .wf-auth {
   background: linear-gradient(205deg, #8fb9c4 0%, #bccfd0 34%, #e3ddd0 62%, #fbe6c6 100%);
 }
+
+/* ── Componentes de la app ─────────────────────────────────────────
+   Tarjetas, campos, botones y avisos con la marca. Las pantallas los usan
+   en lugar de repetir las mismas clases largas en cada archivo. */
+@layer components {
+  .wf-card { @apply bg-white rounded-2xl border border-gray-200 p-5 sm:p-6 space-y-4 shadow-[0_1px_2px_rgba(15,42,55,0.04)]; }
+  .wf-card-title { @apply font-display text-base font-semibold text-gray-900; }
+  .wf-hint { @apply text-xs text-gray-500; }
+  .wf-label { @apply block text-sm font-medium text-gray-700 mb-1; }
+
+  .wf-input { @apply w-full border border-gray-300 rounded-xl px-3.5 py-2.5 text-sm text-gray-900 bg-white placeholder:text-gray-400 transition-colors focus:outline-none focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/25 disabled:bg-gray-50 disabled:text-gray-500; }
+  .wf-input-sm { @apply border border-gray-300 rounded-lg px-2.5 py-1.5 text-sm text-gray-900 bg-white placeholder:text-gray-400 transition-colors focus:outline-none focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/25 disabled:bg-gray-50; }
+
+  .wf-btn { @apply inline-flex items-center justify-center gap-2 rounded-full bg-gray-900 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed; }
+  .wf-btn-lg { @apply px-6 py-3 text-[15px]; }
+  .wf-btn-ghost { @apply inline-flex items-center justify-center gap-2 rounded-full border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:border-gray-500 hover:text-gray-900 disabled:opacity-50 disabled:cursor-not-allowed; }
+  .wf-btn-sm { @apply px-3.5 py-1.5 text-xs; }
+  .wf-btn-win { @apply inline-flex items-center justify-center gap-2 rounded-full bg-emerald-600 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-emerald-700 disabled:opacity-50; }
+  .wf-link-danger { @apply text-xs text-gray-500 transition-colors hover:text-brand-coral; }
+
+  .wf-alert { @apply rounded-2xl border p-4 text-sm; }
+  .wf-alert-ok { @apply bg-brand-mint-soft border-brand-mint/60 text-[#1f5a45]; }
+  .wf-alert-info { @apply bg-[#e8f1f4] border-[#b9d3db] text-[#1d4c63]; }
+  .wf-alert-warn { @apply bg-brand-peach/40 border-brand-peach text-[#7a4a12]; }
+  .wf-alert-error { @apply bg-brand-coral-soft border-brand-coral/40 text-[#8d3a35]; }
+
+  .wf-pill { @apply inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium; }
+  .wf-spinner { @apply h-5 w-5 animate-spin rounded-full border-2 border-brand-teal border-t-transparent; }
+}

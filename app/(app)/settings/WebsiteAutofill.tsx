@@ -31,7 +31,7 @@ const FIELD_LABELS: Record<FieldKey, string> = {
   competitive_differentiators: 'Diferenciales',
 }
 
-const inputCls = 'w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900'
+const inputCls = 'wf-input'
 
 // Onboarding por sitio web: la IA propone, la agencia revisa y elige qué aplicar. Nada se guarda sin su clic.
 export default function WebsiteAutofill({
@@ -130,31 +130,31 @@ export default function WebsiteAutofill({
   }
 
   return (
-    <div className="bg-amber-50 border border-amber-200 rounded-xl p-6 space-y-4">
+    <div className="wf-board space-y-4 rounded-2xl p-5 text-white sm:p-6">
       <div>
-        <h2 className="text-sm font-semibold text-amber-900">Configura tu perfil desde tu sitio web</h2>
-        <p className="text-xs text-amber-800 mt-1">
+        <h2 className="font-display text-base font-semibold">Configura tu perfil desde tu sitio web</h2>
+        <p className="mt-1 text-sm text-slate-300">
           Pega la dirección de tu sitio y proponemos tu descripción, tono y servicios a partir de lo que ahí dice.
           Tú revisas y eliges qué usar. No tocamos precios ni casos de éxito.
         </p>
       </div>
 
-      <div className="flex gap-2">
+      <div className="flex flex-col gap-2 sm:flex-row">
         <input className={inputCls} placeholder="https://tuagencia.com" value={url} onChange={e => setUrl(e.target.value)} />
         <button
           onClick={analyze}
           disabled={busy || !url.trim()}
-          className="shrink-0 text-sm px-4 py-2 rounded-lg bg-gray-900 text-white hover:bg-gray-800 disabled:opacity-50"
+          className="wf-btn shrink-0 !bg-white !text-gray-900 hover:!bg-brand-peach"
         >
           {busy ? 'Leyendo tu sitio…' : 'Analizar mi sitio'}
         </button>
       </div>
 
-      {error && <p className="text-xs text-red-600">{error}</p>}
-      {done && <p className="text-xs text-green-700">{done}</p>}
+      {error && <p className="wf-alert wf-alert-error !p-3 text-xs">{error}</p>}
+      {done && <p className="wf-alert wf-alert-ok !p-3 text-xs">{done}</p>}
 
       {sug && (
-        <div className="space-y-4 bg-white rounded-lg border border-amber-200 p-4">
+        <div className="space-y-4 rounded-xl bg-white p-4 text-gray-900">
           <p className="text-xs text-gray-500">Marca lo que quieras usar. Lo que ya tenías escrito aparece sin marcar para no pisarlo.</p>
 
           {(Object.keys(FIELD_LABELS) as FieldKey[]).filter(k => sug[k]).map(k => (
@@ -201,7 +201,7 @@ export default function WebsiteAutofill({
             <button
               onClick={apply}
               disabled={applying}
-              className="text-sm px-4 py-2 rounded-lg bg-gray-900 text-white hover:bg-gray-800 disabled:opacity-50"
+              className="wf-btn"
             >
               {applying ? 'Aplicando…' : 'Usar lo seleccionado'}
             </button>
