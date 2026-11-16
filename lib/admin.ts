@@ -20,6 +20,9 @@ export const STAGE_LABEL: Record<AccountStage, string> = {
 }
 
 export type Currency = 'MXN' | 'USD'
+// Los costos fijos también pueden estar en euros.
+export type CostCurrency = Currency | 'EUR'
+export type FxRates = { USD: number | null; EUR: number | null }
 
 // Meta del piloto: cuántas agencias lo prueban, cuántas envían propuestas reales y cuántas aceptan pagar.
 export const PILOT_GOAL = { trying: 5, sending: 3, paying: 2 } as const
@@ -133,7 +136,7 @@ export interface FixedCost {
   id: string
   name: string
   monthly_amount: number
-  currency: Currency
+  currency: CostCurrency
 }
 
 export interface Business {
@@ -152,6 +155,7 @@ export interface Business {
   demoCostUsd30: number
   fixedCosts: FixedCost[]
   usdMxn: number | null
+  eurMxn: number | null
   newRequests: number
 }
 
@@ -181,6 +185,7 @@ export function money(n: number, cur: string): string {
   const num = abs.toLocaleString('es-MX', { minimumFractionDigits: digits, maximumFractionDigits: digits })
   const sign = n < 0 ? '−' : ''
   if (cur === 'USD') return `${sign}US$${num}`
+  if (cur === 'EUR') return `${sign}€${num}`
   if (cur === 'MXN') return `${sign}$${num} MXN`
   return `${sign}${num} ${cur}`
 }
@@ -190,13 +195,14 @@ export function moneyTotals(totals: Record<string, number>, empty = '$0 MXN'): s
   return parts.length ? parts.map(([c, v]) => money(v, c)).join(' + ') : empty
 }
 
-// Suma todo en pesos. Devuelve null si hay dólares y falta el tipo de cambio.
-export function toMxn(totals: Record<string, number>, usdMxn: number | null): number | null {
+// Suma todo en pesos. Devuelve null si hay dólares o euros y falta su tipo de cambio.
+export function toMxn(totals: Record<string, number>, rates: FxRates): number | null {
   let sum = 0
   for (const [cur, amt] of Object.entries(totals)) {
     if (!amt) continue
     if (cur === 'MXN') sum += amt
-    else if (cur === 'USD' && usdMxn) sum += amt * usdMxn
+    else if (cur === 'USD' && rates.USD) sum += amt * rates.USD
+    else if (cur === 'EUR' && rates.EUR) sum += amt * rates.EUR
     else return null
   }
   return Math.round(sum * 100) / 100

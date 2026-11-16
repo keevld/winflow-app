@@ -4,7 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { formatCompactTotals } from '@/lib/dashboard'
-import { COST_ESTIMATE_USD, PILOT_GOAL, money, moneyTotals, toMxn, type AdminData, type Currency } from '@/lib/admin'
+import { COST_ESTIMATE_USD, PILOT_GOAL, money, moneyTotals, toMxn, type AdminData, type CostCurrency } from '@/lib/admin'
 import { BoardTile, Card, Sparkline, btnGhost, call, inputCls, shortDate, usd } from './ui'
 
 const ATTENTION_ICON = { failed: '⚠', invite: '✉', dormant: '○', setup: '☐' } as const
@@ -32,8 +32,9 @@ export default function BusinessClient({ data }: { data: AdminData }) {
   const { business: b, platform, attention, agencies } = data
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
-  const [cost, setCost] = useState<{ name: string; amount: string; currency: Currency }>({ name: '', amount: '', currency: 'USD' })
+  const [cost, setCost] = useState<{ name: string; amount: string; currency: CostCurrency }>({ name: '', amount: '', currency: 'USD' })
   const [fx, setFx] = useState(b.usdMxn ? String(b.usdMxn) : '')
+  const [fxEur, setFxEur] = useState(b.eurMxn ? String(b.eurMxn) : '')
 
   async function run(fn: () => Promise<unknown>) {
     setBusy(true); setError('')
@@ -47,8 +48,10 @@ export default function BusinessClient({ data }: { data: AdminData }) {
   let costTotals: Record<string, number> = { USD: Math.round(b.variableCostUsd30 * 100) / 100 }
   for (const c of b.fixedCosts) costTotals = { ...costTotals, [c.currency]: Math.round(((costTotals[c.currency] ?? 0) + c.monthly_amount) * 100) / 100 }
   const fixedTotals = b.fixedCosts.reduce((t, c) => ({ ...t, [c.currency]: (t[c.currency] ?? 0) + c.monthly_amount }), {} as Record<string, number>)
-  const mrrMxn = toMxn(b.mrr, b.usdMxn)
-  const costMxn = toMxn(costTotals, b.usdMxn)
+  const rates = { USD: b.usdMxn, EUR: b.eurMxn }
+  const mrrMxn = toMxn(b.mrr, rates)
+  const costMxn = toMxn(costTotals, rates)
+  const missingFx = [costTotals.USD || b.mrr.USD ? (b.usdMxn ? '' : 'dólar') : '', costTotals.EUR ? (b.eurMxn ? '' : 'euro') : ''].filter(Boolean).join(' y del ')
   const result = mrrMxn !== null && costMxn !== null ? Math.round((mrrMxn - costMxn) * 100) / 100 : null
   const hasNew = Object.values(b.newMrr30).some(Boolean), hasLost = Object.values(b.lostMrr30).some(Boolean)
   const delta = platform.sent30 - platform.sentPrev30
@@ -106,7 +109,7 @@ export default function BusinessClient({ data }: { data: AdminData }) {
 
           <BoardTile label="Resultado del mes (estimado)" value={result === null ? '—' : money(result, 'MXN')} tone={result === null ? undefined : result >= 0 ? 'good' : 'warn'}>
             {result === null
-              ? <p className="text-amber-300">Carga el tipo de cambio en Costos para sumar pesos y dólares</p>
+              ? <p className="text-amber-300">Carga en Costos el tipo de cambio del {missingFx || 'dólar'} para sacar el resultado</p>
               : <p>Ingreso {money(mrrMxn!, 'MXN')} − costos {money(costMxn!, 'MXN')}</p>}
             <p className="text-slate-400">Costos: {moneyTotals(costTotals, 'US$0')} al mes</p>
           </BoardTile>
@@ -181,22 +184,24 @@ export default function BusinessClient({ data }: { data: AdminData }) {
           >
             <input required className={`${inputCls} flex-1 min-w-[9rem]`} placeholder="Ej. Hosting, base de datos, correo" value={cost.name} onChange={e => setCost(c => ({ ...c, name: e.target.value }))} />
             <input required type="number" min="0" step="0.01" className={`${inputCls} !w-24`} placeholder="Al mes" value={cost.amount} onChange={e => setCost(c => ({ ...c, amount: e.target.value }))} />
-            <select className="border border-gray-300 rounded-lg px-2 text-sm bg-white" value={cost.currency} onChange={e => setCost(c => ({ ...c, currency: e.target.value as Currency }))} aria-label="Moneda">
-              <option value="USD">USD</option><option value="MXN">MXN</option>
+            <select className="border border-gray-300 rounded-lg px-2 text-sm bg-white" value={cost.currency} onChange={e => setCost(c => ({ ...c, currency: e.target.value as CostCurrency }))} aria-label="Moneda">
+              <option value="USD">USD</option><option value="EUR">EUR</option><option value="MXN">MXN</option>
             </select>
             <button disabled={busy} className={btnGhost}>Agregar</button>
           </form>
 
           <form
             className="mt-4 flex flex-wrap items-center gap-2 border-t border-gray-100 pt-3 text-sm text-gray-700"
-            onSubmit={e => { e.preventDefault(); run(() => call('/api/admin/settings', 'PUT', { usd_mxn: fx })) }}
+            onSubmit={e => { e.preventDefault(); run(() => call('/api/admin/settings', 'PUT', { usd_mxn: fx, eur_mxn: fxEur })) }}
           >
-            <label htmlFor="fx">Tipo de cambio: 1 USD =</label>
+            <span className="w-full text-xs text-gray-500">Tipo de cambio a pesos</span>
+            <label htmlFor="fx">1 USD =</label>
             <input id="fx" type="number" min="0" step="0.0001" className={`${inputCls} !w-24`} placeholder="MXN" value={fx} onChange={e => setFx(e.target.value)} />
-            <span>MXN</span>
+            <label htmlFor="fx-eur" className="ml-2">1 EUR =</label>
+            <input id="fx-eur" type="number" min="0" step="0.0001" className={`${inputCls} !w-24`} placeholder="MXN" value={fxEur} onChange={e => setFxEur(e.target.value)} />
             <button disabled={busy} className={btnGhost}>Guardar</button>
           </form>
-          <p className="text-xs text-gray-500 mt-2">Se usa solo para sumar pesos y dólares en el resultado del mes. Actualízalo cuando quieras.</p>
+          <p className="text-xs text-gray-500 mt-2">Se usa solo para sumar pesos, dólares y euros en el resultado del mes. Actualízalo cuando quieras.</p>
         </Card>
 
         <Card title="Uso del producto" hint="Agencias reales · últimos 30 días">

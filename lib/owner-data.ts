@@ -4,7 +4,7 @@ import { addTotals, weeklyCounts } from '@/lib/dashboard'
 import {
   COST_ESTIMATE_USD, DEFAULT_ACCOUNT,
   type AccountStage, type Activity, type AdminAgency, type AdminData, type AgencyAccount, type AttentionItem,
-  type Currency, type FixedCost, type PilotRequest, type RequestStatus,
+  type CostCurrency, type Currency, type FixedCost, type PilotRequest, type RequestStatus,
 } from '@/lib/admin'
 
 type Service = Awaited<ReturnType<typeof createServiceClient>>
@@ -225,10 +225,13 @@ export async function loadOwnerData(service: Service): Promise<AdminData> {
   }))
 
   const fixedCosts: FixedCost[] = (costs ?? []).map(c => ({
-    id: c.id as string, name: c.name as string, monthly_amount: Number(c.monthly_amount), currency: c.currency as Currency,
+    id: c.id as string, name: c.name as string, monthly_amount: Number(c.monthly_amount), currency: c.currency as CostCurrency,
   }))
-  const fxRow = (settings ?? []).find(s => s.key === 'usd_mxn')
-  const fx = fxRow ? Number(fxRow.value) : NaN
+  const rate = (key: string) => {
+    const row = (settings ?? []).find(s => s.key === key)
+    const n = row ? Number(row.value) : NaN
+    return Number.isFinite(n) && n > 0 ? n : null
+  }
   const activated = real.filter(a => a.stats.sent > 0).length
 
   const business: AdminData['business'] = {
@@ -243,7 +246,8 @@ export async function loadOwnerData(service: Service): Promise<AdminData> {
     variableCostUsd30: platform.cost30,
     demoCostUsd30: agencies.filter(a => a.account.is_demo).reduce((s, a) => s + a.stats.cost30, 0),
     fixedCosts,
-    usdMxn: Number.isFinite(fx) && fx > 0 ? fx : null,
+    usdMxn: rate('usd_mxn'),
+    eurMxn: rate('eur_mxn'),
     newRequests: requests.filter(r => r.status === 'new').length,
   }
 

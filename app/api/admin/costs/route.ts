@@ -10,7 +10,7 @@ export async function POST(req: NextRequest) {
 
   const name = typeof body.name === 'string' ? body.name.trim().slice(0, 80) : ''
   const amount = Number(body.monthly_amount)
-  const currency = body.currency === 'MXN' ? 'MXN' : body.currency === 'USD' ? 'USD' : null
+  const currency = typeof body.currency === 'string' && ['MXN', 'USD', 'EUR'].includes(body.currency) ? body.currency : null
   if (!name) return NextResponse.json({ error: 'Falta el nombre del costo' }, { status: 400 })
   if (!Number.isFinite(amount) || amount < 0 || amount > 10_000_000) return NextResponse.json({ error: 'Monto inválido' }, { status: 400 })
   if (!currency) return NextResponse.json({ error: 'Moneda inválida' }, { status: 400 })
