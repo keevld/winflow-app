@@ -5,6 +5,7 @@ import { onColor } from '@/lib/color'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { rateLimit, clientIp, tooMany } from '@/lib/rate-limit'
 import { appOrigin } from '@/lib/app-url'
+import { senderName, replyToAddress } from '@/lib/email-identity'
 
 export const maxDuration = 60
 
@@ -224,8 +225,8 @@ ${when ? `<p style="margin:0 0 6px;font-size:14px;color:#6a645c">Vigente hasta e
       to,
       subject,
       html,
-      from_name: agency?.company_name ?? '',
-      reply_to: user.email ?? '',
+      from_name: senderName(agency?.company_name),
+      reply_to: replyToAddress(user.email),
       ...(pdfUrl ? { pdf_url: pdfUrl, pdf_filename: pdfName } : {}),
     }),
   })

@@ -4,6 +4,7 @@
 
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { callClaude, extractJson } from '@/lib/commercial-generate'
+import { senderName as safeSenderName, replyToAddress } from '@/lib/email-identity'
 
 const DAY = 86_400_000
 const STALE_AFTER_DUE_DAYS = 4 // si el cron estuvo caído y ya pasó la ventana, ese paso se omite
@@ -344,7 +345,7 @@ export async function runFollowups(
         const res = await fetch(webhookUrl!, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'X-Winflow-Secret': secret! },
-          body: JSON.stringify({ proposal_id: p.id, to, subject: d.subject, html: d.html, from_name: ag.agencyName, reply_to: d.replyTo }),
+          body: JSON.stringify({ proposal_id: p.id, to, subject: d.subject, html: d.html, from_name: safeSenderName(ag.agencyName), reply_to: replyToAddress(d.replyTo) }),
           signal: AbortSignal.timeout(30_000),
         })
         if (!res.ok) { await fail(`El envío respondió HTTP ${res.status}`); continue }
