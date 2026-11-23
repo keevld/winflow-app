@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import type { PricingMode } from '@/lib/commercial'
 import { Loading, PageHeader } from '../../../ui'
+import CallNotesField from './CallNotesField'
 
 const SIZES = ['1–10 personas', '11–50 personas', '51–200 personas', '201–500 personas', '500+ personas']
 
@@ -23,6 +24,7 @@ function NewCommercialForm() {
   const [products, setProducts] = useState<{ id: string; name: string }[]>([])
   const [chosen, setChosen] = useState<string[]>([])
   const [mode, setMode] = useState<PricingMode>('packages')
+  const [callId, setCallId] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [form, setForm] = useState({
@@ -97,6 +99,7 @@ function NewCommercialForm() {
           pricing_mode: mode,
           product_ids: chosen,
           parent_proposal_id: fromId ?? undefined,
+          call_id: callId ?? undefined,
         }),
       })
       const json = await res.json().catch(() => ({}))
@@ -160,13 +163,7 @@ function NewCommercialForm() {
 
         <div className="wf-card">
           <h2 className="wf-card-title">Lo que se habló en la llamada</h2>
-          <div>
-            <label className={labelClass}>Notas o transcripción</label>
-            <textarea required rows={10} className={inputClass} value={form.call_notes}
-              onChange={e => set('call_notes', e.target.value)}
-              placeholder="Pega aquí tus notas o la transcripción: qué problema tiene, qué necesita, quién decide, qué le preocupó, qué le interesó…" />
-            <p className="text-xs text-gray-400 mt-1">Mientras más detalle, más personalizada sale la propuesta.</p>
-          </div>
+          <CallNotesField notes={form.call_notes} onNotes={v => set('call_notes', v)} onCall={setCallId} />
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className={labelClass}>Presupuesto mencionado <span className="text-gray-400 font-normal">· opcional</span></label>

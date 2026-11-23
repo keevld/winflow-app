@@ -40,6 +40,7 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith('/p/') ||
     pathname.startsWith('/api/public/') ||
     pathname.startsWith('/api/track/') ||
+    pathname.startsWith('/api/webhooks/') || // firmados con el secreto del proveedor dentro de la ruta
     pathname.startsWith('/api/cron/') // protegido con CRON_SECRET dentro de la ruta
 
   if (!user && !isPublic) {

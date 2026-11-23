@@ -117,6 +117,11 @@ export async function POST(req: NextRequest) {
   }
   const id = created.id as string
 
+  // Si las notas vienen de una videollamada grabada por Winflow, se enlaza (solo de la misma agencia)
+  if (typeof body.call_id === 'string' && UUID.test(body.call_id)) {
+    await service.from('call_recordings').update({ proposal_id: id }).eq('id', body.call_id).eq('client_id', clientId).eq('created_by', user.id)
+  }
+
   // La generación (20-90 s) sigue en segundo plano: la petición responde al instante y la
   // página de la propuesta consulta el estado cada 4 s. Así un corte de conexión no la interrumpe.
   after(async () => {
