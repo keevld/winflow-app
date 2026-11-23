@@ -1,7 +1,8 @@
 import crypto from 'crypto'
 
 // Cliente mínimo de Recall.ai (bot de reuniones). Documentación revisada el 18-nov-2026:
-// - Crear bot: POST {base}/api/v1/bot/  (meeting_url, bot_name, metadata)
+// - Crear bot: POST {base}/api/v1/bot/  (meeting_url, bot_name, metadata, join_at opcional)
+// - Programados (join_at > 10 min): DELETE {base}/api/v1/bot/{id}/ cancela; PATCH {base}/api/v1/bot/{id}/ reprograma
 // - Al terminar la grabación llega `recording.done`; entonces se pide la transcripción:
 //   POST {base}/api/v1/recording/{id}/create_transcript/
 // - Al terminar llega `transcript.done`; GET {base}/api/v1/transcript/{id}/ trae data.download_url
@@ -48,21 +49,71 @@ export function detectPlatform(raw: string): { platform: Platform; url: string }
   return null
 }
 
-export async function createBot(opts: { meetingUrl: string; botName: string; callId: string }): Promise<{ id: string }> {
-  const res = await recall('/api/v1/bot/', {
-    method: 'POST',
-    body: JSON.stringify({
-      meeting_url: opts.meetingUrl,
-      bot_name: opts.botName.slice(0, 100),
-      metadata: { call_id: opts.callId },
-    }),
-  })
+/** Un bot programado debe quedar a más de 10 min (regla de Recall); damos margen. */
+export const MIN_SCHEDULE_MINUTES = 11
+export const MAX_SCHEDULE_DAYS = 60
+
+/** Valida una hora de entrada programada. Devuelve el ISO en UTC o un mensaje de error. */
+export function parseJoinAt(raw: unknown): { iso: string } | { error: string } {
+  if (typeof raw !== 'string') return { error: 'Hora inválida.' }
+  const t = new Date(raw)
+  if (Number.isNaN(t.getTime())) return { error: 'Hora inválida.' }
+  const diff = t.getTime() - Date.now()
+  if (diff < MIN_SCHEDULE_MINUTES * 60_000) {
+    return { error: `Elige una hora con al menos ${MIN_SCHEDULE_MINUTES + 1} minutos de anticipación. Si la reunión es ya, usa «Que entre ahora».` }
+  }
+  if (diff > MAX_SCHEDULE_DAYS * 86_400_000) return { error: `Solo puedes programar hasta ${MAX_SCHEDULE_DAYS} días hacia adelante.` }
+  return { iso: t.toISOString() }
+}
+
+/**
+ * Crea el bot. Con `joinAt` queda programado y entra solo a esa hora; sin él, entra de inmediato.
+ * En llamadas programadas el bot espera hasta 30 min por si la reunión empieza tarde.
+ */
+export async function createBot(opts: { meetingUrl: string; botName: string; callId: string; joinAt?: string }): Promise<{ id: string }> {
+  const base: Record<string, unknown> = {
+    meeting_url: opts.meetingUrl,
+    bot_name: opts.botName.slice(0, 100),
+    metadata: { call_id: opts.callId },
+  }
+  if (opts.joinAt) base.join_at = opts.joinAt
+  const withWait = opts.joinAt ? { ...base, automatic_leave: { waiting_room_timeout: 1800, noone_joined_timeout: 1800 } } : base
+
+  let res = await recall('/api/v1/bot/', { method: 'POST', body: JSON.stringify(withWait) })
+  // Si Recall no acepta la espera extendida, reintentamos con la configuración por defecto.
+  if (res.status === 400 && withWait !== base) {
+    res = await recall('/api/v1/bot/', { method: 'POST', body: JSON.stringify(base) })
+  }
   const json = await res.json().catch(() => ({}))
   if (!res.ok || typeof json?.id !== 'string') {
     console.error('recall createBot failed', res.status, JSON.stringify(json).slice(0, 300))
     throw new Error('No se pudo enviar el bot a la reunión')
   }
   return { id: json.id }
+}
+
+/** Cancela un bot programado que aún no se ha despachado. Devuelve false si Recall no lo permitió. */
+export async function cancelScheduledBot(botId: string): Promise<boolean> {
+  try {
+    const res = await recall(`/api/v1/bot/${encodeURIComponent(botId)}/`, { method: 'DELETE' })
+    if (!res.ok) console.error('recall cancelScheduledBot failed', res.status)
+    return res.ok
+  } catch (e) {
+    console.error('recall cancelScheduledBot failed', e)
+    return false
+  }
+}
+
+/** Cambia la hora de entrada de un bot programado. Falla si ya está a punto de entrar (≤10 min). */
+export async function rescheduleBot(botId: string, joinAt: string): Promise<boolean> {
+  try {
+    const res = await recall(`/api/v1/bot/${encodeURIComponent(botId)}/`, { method: 'PATCH', body: JSON.stringify({ join_at: joinAt }) })
+    if (!res.ok) console.error('recall rescheduleBot failed', res.status, (await res.text().catch(() => '')).slice(0, 200))
+    return res.ok
+  } catch (e) {
+    console.error('recall rescheduleBot failed', e)
+    return false
+  }
 }
 
 /** Pide al bot que salga de la reunión (best-effort). */

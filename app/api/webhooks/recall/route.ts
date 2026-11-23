@@ -74,6 +74,14 @@ async function handle(p: Payload) {
     return
   }
 
+  // El bot salió sin haber grabado nada: nadie lo admitió o nadie llegó a la reunión.
+  if (event === 'bot.call_ended' && typeof subCode === 'string' && /waiting_room|noone_joined/.test(subCode)) {
+    if (FINAL.includes(row.status)) return
+    const detail = /noone_joined/.test(subCode) ? 'nobody_joined' : 'not_admitted'
+    await service.from('call_recordings').update({ status: 'failed', status_detail: detail, updated_at: now() }).eq('id', row.id)
+    return
+  }
+
   if (STATUS_BY_EVENT[event]) {
     if (FINAL.includes(row.status)) return
     await service.from('call_recordings')
