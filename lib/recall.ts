@@ -90,7 +90,7 @@ export async function createTranscript(recordingId: string): Promise<{ id: strin
   return { id: json.id }
 }
 
-type Word = { text?: string; start_timestamp?: { relative?: number } }
+type Word = { text?: string; start_timestamp?: { relative?: number }; end_timestamp?: { relative?: number } }
 type Utterance = {
   participant?: { id?: number | string; name?: string | null; is_host?: boolean | null }
   words?: Word[]
@@ -111,8 +111,9 @@ export type Segment = { key: string; name: string; text: string; start: number }
 export type Participant = { key: string; name: string; is_host: boolean; words: number }
 
 /** Junta frases seguidas de la misma persona y resume quién habló cuánto. */
-export function buildTranscript(utterances: Utterance[]): { segments: Segment[]; participants: Participant[] } {
+export function buildTranscript(utterances: Utterance[]): { segments: Segment[]; participants: Participant[]; duration: number } {
   const segments: Segment[] = []
+  let duration = 0
   const people = new Map<string, Participant>()
   for (const u of utterances) {
     const words = (u.words ?? []).map(w => w.text ?? '').filter(Boolean)
@@ -124,11 +125,13 @@ export function buildTranscript(utterances: Utterance[]): { segments: Segment[];
     people.set(key, p)
     const text = words.join(' ')
     const start = Math.round(u.words?.[0]?.start_timestamp?.relative ?? 0)
+    const lastWord = u.words?.[u.words.length - 1]
+    duration = Math.max(duration, Math.round(lastWord?.end_timestamp?.relative ?? lastWord?.start_timestamp?.relative ?? 0))
     const last = segments[segments.length - 1]
     if (last && last.key === key) last.text += ' ' + text
     else segments.push({ key, name, text, start })
   }
-  return { segments, participants: [...people.values()].sort((a, b) => b.words - a.words) }
+  return { segments, participants: [...people.values()].sort((a, b) => b.words - a.words), duration }
 }
 
 /** Verifica la firma de un webhook de Recall (HMAC-SHA256, estilo Svix). Lanza si no es válida. */

@@ -101,7 +101,7 @@ async function handle(p: Payload) {
     const tid = row.recall_transcript_id ?? (typeof d.transcript?.id === 'string' ? d.transcript.id : null)
     if (row.status === 'ready' || !tid) return
     try {
-      const { segments, participants } = buildTranscript(await fetchTranscript(tid))
+      const { segments, participants, duration } = buildTranscript(await fetchTranscript(tid))
       if (segments.length === 0) {
         await service.from('call_recordings').update({ status: 'failed', status_detail: 'empty_transcript', updated_at: now() }).eq('id', row.id)
         return
@@ -111,7 +111,7 @@ async function handle(p: Payload) {
         status_detail: null,
         participants,
         transcript: segments,
-        duration_seconds: segments[segments.length - 1].start,
+        duration_seconds: duration,
         updated_at: now(),
       }).eq('id', row.id)
     } catch (e) {
