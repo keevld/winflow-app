@@ -148,26 +148,33 @@ export default function Landing({ loggedIn = false }: { loggedIn?: boolean }) {
 
             {/* Vista ilustrativa del producto */}
             <div className="lp-hero-visual" aria-hidden="true">
-              <div className="lp-mock lp-mock-doc">
-                <div className="lp-mock-bar"><i /><i /><i /><span>winflowapp.com/p/casa-olmo</span></div>
-                <div className="lp-mock-cover">
-                  <p className="lp-mock-agency">Estudio Brújula</p>
-                  <p className="lp-mock-title">Propuesta para Casa Olmo</p>
-                  <p className="lp-mock-sub">Preparada para Mariana · válida 15 días</p>
+              <div className="lp-prop">
+                <div className="lp-prop-cover">
+                  <p className="lp-prop-agency">Estudio Brújula</p>
+                  <p className="lp-prop-title">Propuesta para Casa Olmo</p>
+                  <p className="lp-prop-sub">Preparada para Mariana · válida 15 días</p>
                 </div>
-                <div className="lp-mock-body">
-                  <div className="lp-mock-lines"><i /><i /><i className="s" /></div>
-                  <div className="lp-mock-metrics">
-                    <div><b>12</b><span>Publicaciones al mes</span></div>
-                    <div><b>3</b><span>Campañas activas</span></div>
-                    <div><b>$9,500</b><span>Inversión mensual</span></div>
-                  </div>
-                  <div className="lp-mock-actions"><span className="p">Aceptar propuesta</span><span>Agendar llamada</span></div>
+                <div className="lp-prop-body">
+                  <p className="lp-prop-seal"><Icon name="check" />Datos verificados · 2 frases corregidas antes de enviar</p>
+                  <p className="lp-prop-text">
+                    Mariana, nos contaste que hoy publican sin calendario y que quieren más reservas en la segunda sucursal. Esto es lo que proponemos para el próximo trimestre.
+                  </p>
+                  <dl className="lp-prop-rows">
+                    <div><dt>Gestión de redes<small>12 publicaciones al mes</small></dt><dd>$6,500</dd></div>
+                    <div><dt>Campañas pagadas<small>3 campañas activas</small></dt><dd>$3,000</dd></div>
+                    <div className="t"><dt>Inversión mensual</dt><dd>$9,500</dd></div>
+                  </dl>
+                  <span className="lp-prop-cta">Aceptar propuesta</span>
                 </div>
               </div>
-              <div className="lp-chip lp-chip-1"><span className="lp-chip-i ok"><Icon name="check" /></span><div><b>Datos verificados</b><span>2 frases corregidas antes de enviar</span></div></div>
-              <div className="lp-chip lp-chip-2"><span className="lp-chip-i eye"><Icon name="eye" /></span><div><b>Mariana abrió la propuesta</b><span>Hace 5 min · 2 aperturas</span></div></div>
-              <div className="lp-chip lp-chip-3"><span className="lp-chip-i fol"><Icon name="follow" /></span><div><b>Seguimiento 1 de 3</b><span>Sale solo en 3 días</span></div></div>
+              <aside className="lp-live">
+                <p className="lp-live-h">Después de enviar</p>
+                <ul>
+                  <li className="done"><b>Enviada a Mariana</b><span>Lunes, 10:02</span></li>
+                  <li className="done"><b>Mariana la abrió</b><span>Hace 5 min · 2 aperturas</span></li>
+                  <li className="next"><b>Seguimiento 1 de 3</b><span>Sale solo en 3 días</span></li>
+                </ul>
+              </aside>
             </div>
           </div>
           <ul className="lp-strip" aria-label="Lo que hace Winflow">
