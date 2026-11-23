@@ -177,13 +177,16 @@ export default function Landing({ loggedIn = false }: { loggedIn?: boolean }) {
               </aside>
             </div>
           </div>
+        </section>
+
+        <div className="lp-strip-band">
           <ul className="lp-strip" aria-label="Lo que hace Winflow">
             <li><Icon name="voice" /><div><b>Tu tono, tu marca, tus colores y tu logo</b><span>Aprendemos de cómo lo haces tú.</span></div></li>
             <li><Icon name="check" /><div><b>Datos verificados con filtros</b><span>Y la decisión final sigue siendo tuya.</span></div></li>
             <li><Icon name="page" /><div><b>Página propia y PDF</b><span>Tu cliente la abre desde un enlace.</span></div></li>
             <li><Icon name="follow" /><div><b>Seguimiento sin que te acuerdes</b><span>Sale solo, al ritmo de cada cliente.</span></div></li>
           </ul>
-        </section>
+        </div>
 
         {/* ── Cómo funciona (recorrido animado) ── */}
         <section className="lp-how" id="como">
@@ -197,6 +200,8 @@ export default function Landing({ loggedIn = false }: { loggedIn?: boolean }) {
         </section>
 
         {/* ── Problema ── */}
+        <div className="lp-rib-wrap">
+        <Ribbons id="lp-rib-prob" className="lp-light-ribbons lp-rib-bottom" count={12} />
         <section className="lp-section" id="problema">
           <p className="lp-kicker">El problema</p>
           <h2>Un trato casi nunca se pierde en la llamada. Se pierde en lo que viene después.</h2>
@@ -219,7 +224,11 @@ export default function Landing({ loggedIn = false }: { loggedIn?: boolean }) {
           </div>
         </section>
 
+        </div>
+
         {/* ── Producto ── */}
+        <div className="lp-rib-wrap">
+        <Ribbons id="lp-rib-prod" className="lp-light-ribbons lp-rib-top" count={12} />
         <section className="lp-section lp-product" id="producto">
           <p className="lp-kicker">El producto</p>
           <h2>Hecho para que lo que envías sea tuyo, y sea cierto.</h2>
@@ -337,8 +346,11 @@ export default function Landing({ loggedIn = false }: { loggedIn?: boolean }) {
           </div>
         </section>
 
+        </div>
+
         {/* ── Piloto fundador ── */}
         <section className="lp-pilot" id="piloto">
+          <Ribbons id="lp-rib-pilot" className="lp-light-ribbons lp-rib-bottom" count={12} />
           <div className="lp-pilot-in">
             <p className="lp-kicker">Piloto fundador</p>
             <h2>Entra primero, paga menos y ayúdanos a darle forma.</h2>
@@ -373,6 +385,8 @@ export default function Landing({ loggedIn = false }: { loggedIn?: boolean }) {
         </section>
 
         {/* ── Preguntas ── */}
+        <div className="lp-rib-wrap">
+        <Ribbons id="lp-rib-faq" className="lp-light-ribbons lp-rib-bottom" count={12} />
         <section className="lp-section lp-faq" id="preguntas">
           <div className="lp-faq-head">
             <p className="lp-kicker">Preguntas frecuentes</p>
@@ -419,6 +433,8 @@ export default function Landing({ loggedIn = false }: { loggedIn?: boolean }) {
             </details>
           </div>
         </section>
+
+        </div>
 
         {/* ── Solicitar piloto ── */}
         <section className="lp-request" id="solicitar">
